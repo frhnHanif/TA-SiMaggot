@@ -7,7 +7,7 @@
         <!-- ========================================== -->
         <!-- BAGIAN 1: KPI UTAMA (TOP CARDS)            -->
         <!-- ========================================== -->
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
             
             <!-- Suhu Udara -->
             <div class="bg-white rounded-[1.5rem] shadow-sm p-5 border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">

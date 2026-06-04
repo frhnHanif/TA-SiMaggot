@@ -29,6 +29,11 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @media (max-width: 640px) {
+        html {
+            font-size: 12px;
+        }
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased font-sans relative">
@@ -70,7 +75,7 @@
             @auth
                 <!-- Dropdown Notifikasi -->
                 <div class="relative group" id="notifContainer">
-                    <button onclick="toggleNotifDropdown()" class="w-10 h-10 hidden sm:flex items-center justify-center rounded-full border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 transition-all hover:shadow-sm relative">
+                    <button onclick="toggleNotifDropdown()" class="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 transition-all hover:shadow-sm relative">
                         <i class="fa-regular fa-bell"></i>
                         <!-- Titik Merah (Badge) -->
                         <span id="notifBadge" class="absolute top-0 right-0 flex h-3 w-3 hidden">
