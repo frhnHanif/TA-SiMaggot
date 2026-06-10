@@ -1,7 +1,12 @@
 <?php
 
 return [
+    // PIN Manajemen Akun via Web
     'admin_pin' => env('ADMIN_PIN'),
+
+    // API Key untuk Hardware ESP32 (Tambahan Baru)
+    'api_key' => env('IOT_API_KEY'),
+
     'thresholds' => [
         // Suhu Udara
         'temp' => [

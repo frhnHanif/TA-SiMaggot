@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SensorDataController;
 use App\Http\Controllers\CycleController;
+use App\Http\Middleware\CheckIotApiKey;
 // Tambahkan untuk manajemen akun
 use App\Models\User;
 use Illuminate\Http\Request;

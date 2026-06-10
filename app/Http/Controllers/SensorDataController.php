@@ -29,14 +29,24 @@ class SensorDataController extends Controller
     }
 
     // Mengirimkan status kontrol terbaru ke ESP32 (GET)
+   // Mengirimkan status kontrol terbaru ke ESP32 atau Postman (GET)
     public function getControl()
     {
-        $control = DeviceControl::first();
+        // Gunakan with() untuk memuat relasi data User sekaligus (Eager Loading)
+        $control = DeviceControl::with('controllerUser')->first();
         
         return response()->json([
             'is_manual' => $control->is_manual,
+            'fan' => $control->fan,
             'mist' => $control->mist,
-            'fan' => $control->fan
+            
+            // Tampilkan ID-nya
+            'controlled_by_id' => $control->controlled_by,
+            
+            // Tampilkan NAMA ASLI pengelolanya (Ambil dari relasi tabel users)
+            'controlled_by_name' => $control->controllerUser ? $control->controllerUser->name : null,
+            
+            'locked_until' => $control->locked_until ? $control->locked_until->format('Y-m-d H:i:s') : null
         ]);
     }
 
