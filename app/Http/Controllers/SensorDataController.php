@@ -86,6 +86,7 @@ class SensorDataController extends Controller
             $query->where('created_at', '>=', now()->subDay());
         }
 
+
         // 2. Logika Pengurutan (Terbaru/Terlama)
         $sort = $request->query('sort', 'desc');
         if ($sort === 'asc') {
@@ -253,26 +254,53 @@ class SensorDataController extends Controller
     public function updateControl(Request $request)
     {
         $control = DeviceControl::first();
+        $isUpdated = false; // Flag untuk mengecek apakah benar-benar ada data yang diproses
 
         // Tangkap perubahan Mode (Manual/Auto)
         if ($request->has('is_manual')) {
-            $control->is_manual = $request->is_manual;
+            $control->is_manual = $request->boolean('is_manual'); // Gunakan boolean agar lebih ketat (terima true/false, 1/0)
+            $isUpdated = true;
         }
 
         // Jika user menggeser slider kipas
         if ($request->has('fan')) {
-            $control->fan = $request->fan;
+            $control->fan = (int) $request->fan;
+            $isUpdated = true;
         }
 
-        // Jika user menekan tombol mist maker
-        if ($request->has('mist_index') && $request->has('mist_value')) {
-            $mistArray = $control->mist;
+        // --- LOGIKA MIST MAKER DIPERBARUI ---
+        // Skenario A: Jika menerima satu array penuh (Bagus untuk test Postman / sinkronisasi ESP32)
+        if ($request->has('mist') && is_array($request->mist)) {
+            $control->mist = $request->mist;
+            $isUpdated = true;
+        } 
+        // Skenario B: Jika menerima update satuan dari tombol Web (mist_index & mist_value)
+        elseif ($request->has('mist_index') && $request->has('mist_value')) {
+            $mistArray = is_array($control->mist) ? $control->mist : json_decode($control->mist, true);
             $mistArray[$request->mist_index] = (int) $request->mist_value;
-            $control->mist = $mistArray; // Simpan kembali array yang sudah diubah
+            $control->mist = $mistArray;
+            $isUpdated = true;
         }
 
-        $control->save();
-        return response()->json(['message' => 'Status berhasil diupdate!']);
+        // Jika ada perubahan, simpan dan berikan response sukses
+        if ($isUpdated) {
+            $control->save();
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Status berhasil diupdate!',
+                'data_tersimpan' => [
+                    'is_manual' => $control->is_manual,
+                    'fan' => $control->fan,
+                    'mist' => $control->mist
+                ]
+            ]);
+        }
+
+        // Jika tidak ada key yang cocok, berikan response error 400 Bad Request
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Tidak ada data yang valid untuk diupdate. Pastikan key JSON sesuai.'
+        ], 400);
     }
 
     // Method Global Alert (AJAX Polling)
