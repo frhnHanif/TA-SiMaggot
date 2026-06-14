@@ -10,6 +10,7 @@ class SensorDataSeeder extends Seeder
 {
     public function run()
     {
+        DB::table('sensor_data')->truncate();
         $data = [];
         // Mulai dari 30 hari yang lalu
         $currentDate = Carbon::now()->subDays(30);

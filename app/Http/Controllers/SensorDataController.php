@@ -34,11 +34,15 @@ class SensorDataController extends Controller
     {
         // Gunakan with() untuk memuat relasi data User sekaligus (Eager Loading)
         $control = DeviceControl::with('controllerUser')->first();
+
+        // Panggil evaluasi timer dan fail-safe SEBELUM mengirim ke ESP32
+        $control = $this->evaluateSystemState($control);
         
         return response()->json([
             'is_manual' => $control->is_manual,
             'fan' => $control->fan,
             'mist' => $control->mist,
+            'mist_stop_at' => $control->mist_stop_at,
             
             // Tampilkan ID-nya
             'controlled_by_id' => $control->controlled_by,
@@ -161,6 +165,10 @@ class SensorDataController extends Controller
     {
         // Ambil status terkini untuk ditampilkan di tombol web
         $control = DeviceControl::first();
+
+        // Evaluasi state saat web direfresh
+        $control = $this->evaluateSystemState($control);
+
         // Ambil data sensor terbaru untuk panduan manual override
         $latestData = SensorData::latest()->first(); 
         
@@ -175,8 +183,22 @@ class SensorDataController extends Controller
                 $lockMessage = "Akses terkunci! Pengelola bernama <strong>" . $control->controllerUser->name . "</strong> sedang mengendalikan sistem ini secara manual hingga pukul " . $control->locked_until->format('H:i') . " WIB.";
             }
         }
+
+        // --- HITUNG SISA WAKTU (COUNTDOWN) UNTUK DIKIRIM KE JAVASCRIPT ---
+        $mistStopAt = is_array($control->mist_stop_at) ? $control->mist_stop_at : json_decode($control->mist_stop_at, true) ?? [null,null,null,null,null,null];
+        $mistRemaining = [];
+        $now = now();
+        foreach($mistStopAt as $stop) {
+            if ($stop) {
+                $stopTime = \Carbon\Carbon::parse($stop);
+                $diff = $now->diffInSeconds($stopTime, false); 
+                $mistRemaining[] = $diff > 0 ? $diff : 0;
+            } else {
+                $mistRemaining[] = 0;
+            }
+        }
         
-        return view('control.index', compact('control', 'latestData', 'isLockedByOthers', 'lockMessage'));
+        return view('control.index', compact('control', 'latestData', 'isLockedByOthers', 'lockMessage', 'mistRemaining'));
     }
 
     // 4. Halaman Statistik & Analitik
@@ -276,6 +298,7 @@ class SensorDataController extends Controller
     public function updateControl(Request $request)
     {
         $control = DeviceControl::first();
+        $control = $this->evaluateSystemState($control);
         $currentUser = auth()->id();
         $now = now();
         $isUpdated = false; // Flag untuk mengecek apakah benar-benar ada data yang diproses
@@ -334,9 +357,24 @@ class SensorDataController extends Controller
             } 
             // Skenario B: Jika menerima update satuan dari tombol Web (mist_index & mist_value)
             elseif ($request->has('mist_index') && $request->has('mist_value')) {
-                $mistArray = is_array($control->mist) ? $control->mist : json_decode($control->mist, true);
-                $mistArray[$request->mist_index] = (int) $request->mist_value;
+                $mistArray = is_array($control->mist) ? $control->mist : json_decode($control->mist, true) ?? [0,0,0,0,0,0];
+                $mistStopArray = is_array($control->mist_stop_at) ? $control->mist_stop_at : json_decode($control->mist_stop_at, true) ?? [null,null,null,null,null,null];
+                
+                $idx = $request->mist_index;
+                $val = (int) $request->mist_value;
+                
+                $mistArray[$idx] = $val;
+                
+                // Set Timer jika Mist dinyalakan (10) dan membawa parameter duration
+                if ($val === 10 && $request->has('duration')) {
+                    $mistStopArray[$idx] = now()->addSeconds((int) $request->duration)->toDateTimeString();
+                } else {
+                    // Jika mist dimatikan manual (0), hilangkan timernya
+                    $mistStopArray[$idx] = null;
+                }
+                
                 $control->mist = $mistArray;
+                $control->mist_stop_at = $mistStopArray;
                 $isUpdated = true;
             }
         }
@@ -488,5 +526,55 @@ class SensorDataController extends Controller
         }
 
         return response()->json(['alerts' => $alerts]);
+    }
+    
+    
+    // =========================================================================
+    // FUNGSI PRIVATE: PENGECEKAN TIMER & FAIL-SAFE (LAZY EVALUATION)
+    // =========================================================================
+    private function evaluateSystemState($control)
+    {
+        $now = now();
+        $isChanged = false;
+
+        // 1. FAIL-SAFE: Jika lock manual habis (5 menit tidak ada aktivitas), KEMBALIKAN KE OTOMATIS
+        if ($control->is_manual && $control->locked_until && $control->locked_until->isPast()) {
+            $control->is_manual = false;
+            $control->controlled_by = null;
+            $control->locked_until = null;
+            $control->mist = [0,0,0,0,0,0];
+            $control->mist_stop_at = [null,null,null,null,null,null];
+            $isChanged = true;
+        }
+
+        // 2. MIST MAKER TIMER: Cek jika ada timer yang sudah melewati waktu sekarang
+        if ($control->is_manual) {
+            $mist = is_array($control->mist) ? $control->mist : json_decode($control->mist, true) ?? [0,0,0,0,0,0];
+            $mistStop = is_array($control->mist_stop_at) ? $control->mist_stop_at : json_decode($control->mist_stop_at, true) ?? [null,null,null,null,null,null];
+
+            for ($i = 0; $i < count($mist); $i++) {
+                if ($mist[$i] == 10 && $mistStop[$i]) {
+                    $stopTime = \Carbon\Carbon::parse($mistStop[$i]);
+                    // Jika waktu sekarang melebihi atau sama dengan waktu stop
+                    if ($now->greaterThanOrEqualTo($stopTime)) {
+                        $mist[$i] = 0; // Matikan mist
+                        $mistStop[$i] = null; // Reset timer
+                        $isChanged = true;
+                    }
+                }
+            }
+
+            if ($isChanged) {
+                $control->mist = $mist;
+                $control->mist_stop_at = $mistStop;
+            }
+        }
+
+        // Simpan hanya jika ada perubahan (menghindari query tidak perlu)
+        if ($isChanged) {
+            $control->save();
+        }
+
+        return $control;
     }
 }

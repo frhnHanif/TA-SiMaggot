@@ -35,7 +35,7 @@
             <div>
                 <h4 class="font-bold text-base">Akses Kontrol Terkunci</h4>
                 <p class="text-sm mt-1">{!! $lockMessage !!}</p>
-                <p class="text-[11px] text-amber-600 font-medium mt-2">*Kunci akan terbuka otomatis jika akun tersebut tidak melakukan aktivitas perubahan kontrol selama 5 menit atau mengembalikan sistem ke mode otomatis.</p>
+                <p class="text-[11px] text-amber-600 font-medium mt-2">*Kunci akan terbuka otomatis dan kembali ke mode OTOMATIS jika akun tersebut tidak melakukan aktivitas perubahan kontrol selama 5 menit.</p>
             </div>
         </div>
     @endif
@@ -46,7 +46,7 @@
         </div>
         <div>
             <h4 class="font-bold">Sistem Berjalan Otomatis (Fuzzy Logic)</h4>
-            <p class="text-sm mt-0.5">Saat ini ESP32 mengendalikan aktuator secara mandiri berdasarkan algoritma fuzzy data sensor. Anda harus mengubah sakelar ke mode <strong class="text-red-600">MANUAL</strong> terlebih dahulu untuk mengambil alih kontrol.</p>
+            <p class="text-sm mt-0.5">Saat ini ESP32 mengendalikan aktuator secara mandiri berdasarkan data sensor. Anda harus mengubah sakelar ke mode <strong class="text-red-600">MANUAL</strong> terlebih dahulu untuk mengambil alih kontrol.</p>
         </div>
     </div>
 
@@ -83,7 +83,7 @@
                     <i class="fa-solid fa-temperature-half text-amber-500 text-lg"></i>
                     <div>
                         <p class="text-[10px] text-amber-600/70 font-bold uppercase tracking-wider mb-0.5">Suhu Udara</p>
-                        <p class="text-lg font-black text-amber-600">{{ $temp }} <span class="text-xs font-normal">°C</span></p>
+                        <p class="text-lg font-black text-amber-600">{{ $temp }} <span class="text-xs font-normal">&deg;C</span></p>
                     </div>
                 </div>
                 <div class="flex-1 bg-blue-50/50 rounded-xl p-3 border border-blue-100 flex items-center gap-3">
@@ -110,7 +110,6 @@
                 
                 @foreach($fanLevels as $level)
                     @php
-                        // Deteksi tombol aktif dengan batas toleransi rentang PWM
                         $isActive = abs($currentFan - $level['val']) <= 25;
                     @endphp
                     <button type="button" 
@@ -128,13 +127,22 @@
         </div>
 
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 flex flex-col">
-            <div class="flex items-center gap-3 mb-5">
+            
+            <div class="flex items-center gap-3 mb-4">
                 <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
                     <i class="fa-solid fa-cloud-showers-water"></i>
                 </div>
                 <div>
                     <h3 class="font-bold text-gray-800">Mist Maker Substrat</h3>
-                    <p class="text-xs text-gray-500">Nyalakan pelembap media secara manual per rak biopond</p>
+                    <p class="text-xs text-gray-500">Nyalakan pelembap otomatis mati berdasar timer</p>
+                </div>
+            </div>
+
+            <div class="flex justify-center mb-6">
+                <div class="inline-flex gap-1 bg-gray-100 p-1 rounded-xl select-none {{ ($isLockedByOthers || !$control->is_manual) ? 'opacity-50 pointer-events-none' : '' }}">
+                    <button type="button" onclick="selectDuration(10)" id="duration-btn-10" class="duration-btn px-4 py-1.5 rounded-lg text-xs font-black transition-all bg-gray-800 text-white shadow-sm border border-transparent">10s</button>
+                    <button type="button" onclick="selectDuration(30)" id="duration-btn-30" class="duration-btn px-4 py-1.5 rounded-lg text-xs font-black transition-all text-gray-500 hover:text-gray-800 hover:bg-white/50">30s</button>
+                    <button type="button" onclick="selectDuration(60)" id="duration-btn-60" class="duration-btn px-4 py-1.5 rounded-lg text-xs font-black transition-all text-gray-500 hover:text-gray-800 hover:bg-white/50">60s</button>
                 </div>
             </div>
 
@@ -169,10 +177,6 @@
                 @endforeach
             </div>
 
-            <div class="mt-4 bg-red-50 border border-red-100 p-3 rounded-xl text-center">
-                <p class="text-[10px] text-red-600 font-bold flex items-center justify-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Peringatan Sistem:</p>
-                <p class="text-[10px] text-red-500 mt-0.5">Sistem berjalan tanpa timer internal otomatis. Pastikan mematikan kembali sakelar (OFF) setelah kelembapan media optimal tercapai.</p>
-            </div>
         </div>
 
     </div>
@@ -182,6 +186,12 @@
 @push('scripts')
 <script>
     let isManualMode = {{ $control->is_manual ? 'true' : 'false' }};
+    
+    // Default pilihan waktu aktif (dalam hitungan detik)
+    let selectedDuration = 10;
+    
+    // Inisialisasi variabel sisa waktu hitung mundur pompa dari backend controller
+    let mistRemaining = {!! json_encode($mistRemaining) !!}; 
 
     // Aksi 1: Modifikasi Status Pintu Gerbang Mode Operasional
     function toggleMode() {
@@ -196,7 +206,6 @@
     function sendFanData(pwmValue) {
         if (!isManualMode) return;
         
-        // Optimistic UI Update untuk barisan tombol kipas
         document.querySelectorAll('.fan-btn').forEach(btn => {
             let btnVal = parseInt(btn.getAttribute('data-val'));
             if (Math.abs(pwmValue - btnVal) <= 25) {
@@ -206,7 +215,6 @@
             }
         });
 
-        // Kontrol rotasi ikon kipas animasi
         let icon = document.getElementById('fanIcon');
         if(pwmValue > 0) {
             icon.classList.add('fa-spin');
@@ -217,39 +225,93 @@
         sendToServer({ fan: pwmValue });
     }
 
-    // Aksi 3: Sakelar State Mist Maker (Kirim Nilai Mutlak 10 atau 0)
-    function toggleMist(index, currentVal) {
+    // Fungsi Baru: Mengganti Pilihan Waktu Timer Pompa (Highlight Switcher)
+    function selectDuration(seconds) {
         if (!isManualMode) return;
-
-        // Logika Pengkondisian Sakelar
-        let sendValue;
-        if (currentVal === 0) {
-            sendValue = 10; // Jika saat ini status OFF (0) -> Ubah menjadi ON (10)
-        } else {
-            sendValue = 0;  // Jika saat ini status ON (10) -> Ubah menjadi OFF (0)
-        }
-
-        sendToServer({ mist_index: index, mist_value: sendValue }, function() {
-            // Optimistic UI Update untuk elemen Tombol Rak Mist Maker
-            let btn = document.getElementById('btn-mist-' + index);
-            let badge = document.getElementById('badge-mist-' + index);
-            let soilInfo = document.getElementById('soil-info-' + index);
-            
-            btn.setAttribute('onclick', `toggleMist(${index}, ${sendValue})`);
-            
-            if (sendValue === 10) {
-                btn.className = "relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all border-blue-500 bg-blue-50 text-blue-600 shadow-sm";
-                badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-200 text-blue-800";
-                badge.innerText = "ON";
-                soilInfo.className = "flex items-center gap-1 text-[10px] font-bold mb-2 text-blue-500";
+        selectedDuration = seconds;
+        
+        document.querySelectorAll('.duration-btn').forEach(btn => {
+            if (btn.id === 'duration-btn-' + seconds) {
+                btn.className = "duration-btn px-4 py-1.5 rounded-lg text-xs font-black transition-all bg-gray-800 text-white shadow-sm border border-transparent";
             } else {
-                btn.className = "relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all border-gray-200 bg-white text-gray-600 hover:border-blue-300";
-                badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-200 text-gray-500";
-                badge.innerText = "OFF";
-                soilInfo.className = "flex items-center gap-1 text-[10px] font-bold mb-2 text-gray-400";
+                btn.className = "duration-btn px-4 py-1.5 rounded-lg text-xs font-black transition-all text-gray-500 hover:text-gray-800 hover:bg-white/50";
             }
         });
     }
+
+    // Aksi 3: Sakelar State Mist Maker dengan Manajemen Timer Kompleks
+    function toggleMist(index, currentVal) {
+        if (!isManualMode) return;
+
+        let sendValue = currentVal === 0 ? 10 : 0;
+        let duration = selectedDuration;
+
+        let payload = { 
+            mist_index: index, 
+            mist_value: sendValue 
+        };
+        
+        if(sendValue === 10) {
+            payload.duration = duration;
+        }
+
+        sendToServer(payload, function() {
+            if(sendValue === 10) {
+                mistRemaining[index] = duration;
+            } else {
+                mistRemaining[index] = 0;
+            }
+            updateMistUI(index, sendValue, mistRemaining[index]);
+        });
+    }
+
+    // Fungsi Pengendali Sinkronisasi Tampilan UI Rak Pompa
+    function updateMistUI(index, val, secondsLeft) {
+        let btn = document.getElementById('btn-mist-' + index);
+        let badge = document.getElementById('badge-mist-' + index);
+        let soilInfo = document.getElementById('soil-info-' + index);
+        
+        btn.setAttribute('onclick', `toggleMist(${index}, ${val})`);
+        
+        if (val === 10) {
+            btn.className = "relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all border-blue-500 bg-blue-50 text-blue-600 shadow-sm";
+            badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-200 text-blue-800";
+            badge.innerText = `ON (${secondsLeft}s)`;
+            soilInfo.className = "flex items-center gap-1 text-[10px] font-bold mb-2 text-blue-500";
+        } else {
+            btn.className = "relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all border-gray-200 bg-white text-gray-600 hover:border-blue-300";
+            badge.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-200 text-gray-500";
+            badge.innerText = "OFF";
+            soilInfo.className = "flex items-center gap-1 text-[10px] font-bold mb-2 text-gray-400";
+        }
+    }
+
+    // LIVE INTERACTIVE COUNTDOWN LOOP (Berjalan setiap 1 detik di Sisi Browser)
+    setInterval(() => {
+        for (let i = 0; i < 6; i++) {
+            if (mistRemaining[i] > 0) {
+                mistRemaining[i]--;
+                
+                let badge = document.getElementById('badge-mist-' + i);
+                if (badge && badge.innerText.includes('ON')) {
+                    badge.innerText = `ON (${mistRemaining[i]}s)`;
+                }
+                
+                if (mistRemaining[i] === 0) {
+                    updateMistUI(i, 0, 0);
+                }
+            }
+        }
+    }, 1000);
+
+    // Render Awal saat Halaman Selesai Dimuat (Menjaga Sinkronisasi Jika Halaman Direfresh)
+    document.addEventListener("DOMContentLoaded", () => {
+        for (let i = 0; i < 6; i++) {
+            if (mistRemaining[i] > 0) {
+                updateMistUI(i, 10, mistRemaining[i]);
+            }
+        }
+    });
 
     // Jembatan Komunikasi Utama AJAX Fetch API ke Laravel Backend
     function sendToServer(payload, onSuccess = null) {

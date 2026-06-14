@@ -13,6 +13,7 @@ class DeviceControl extends Model
     protected $fillable = [
         'is_manual',
         'mist',
+        'mist_stop_at',
         'fan',
         'controlled_by',
         'locked_until'
@@ -24,6 +25,7 @@ class DeviceControl extends Model
         'fan' => 'integer',               // Paksa selalu jadi angka
         'controlled_by' => 'integer',     // Paksa selalu jadi angka
         'mist' => 'array',
+        'mist_stop_at' => 'array',
         'locked_until' => 'datetime',
     ];
 

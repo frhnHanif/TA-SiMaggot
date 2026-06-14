@@ -16,7 +16,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Suhu Udara</p>
-                    <p class="text-2xl font-black text-gray-800">{{ $latestData->temp }} <span class="text-sm font-medium text-gray-500">°C</span></p>
+                    <p class="text-2xl font-black text-gray-800">{{ $latestData->temp }} <span class="text-sm font-medium text-gray-500">&deg;C</span></p>
                 </div>
             </div>
 
@@ -277,8 +277,11 @@
                                     $avgSoil = count($soilArray) > 0 ? array_sum($soilArray) / count($soilArray) : 0;
                                 @endphp
                                 <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group">
-                                    <td class="py-3 pl-2 font-medium text-gray-800">{{ $log->created_at->format('H:i') }} <span class="text-xs text-gray-400 ml-1">{{ $log->created_at->format('d/m') }}</span></td>
-                                    <p class="text-2xl font-black text-gray-800">{{ $latestData->temp }} <span class="text-sm font-medium text-gray-500">&deg;C</span></p>
+                                    <td class="py-3 pl-2 font-medium text-gray-800">
+                                        {{ $log->created_at->format('H:i') }}
+                                        <span class="text-xs text-gray-400 ml-1">{{ $log->created_at->format('d/m') }}</span>
+                                    </td>
+                                    <td class="py-3 text-gray-600">{{ $log->temp }} &deg;C</td>  {{-- DIPERBAIKI --}}
                                     <td class="py-3 text-gray-600">{{ $log->hum }} %</td>
                                     <td class="py-3 text-gray-600">{{ number_format($avgSoil, 1) }} %</td>
                                     <td class="py-3">
