@@ -4,7 +4,6 @@
 
 @section('content')
 
-    <!-- Flash Message -->
     @if(session('success'))
         <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative shadow-sm text-sm" role="alert">
             <strong class="font-bold">Berhasil!</strong>
@@ -19,9 +18,6 @@
     @endif
 
     @if($activeCycle)
-        <!-- ========================================== -->
-        <!-- BAGIAN 1A: STATUS SIKLUS AKTIF             -->
-        <!-- ========================================== -->
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 sm:p-8 mb-6 relative overflow-hidden">
             <div class="absolute -right-20 -top-20 w-64 h-64 bg-amber-50 rounded-full blur-3xl opacity-60"></div>
             
@@ -44,11 +40,11 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                     <p class="text-xs text-gray-400 font-medium">Bibit Awal</p>
-                    <p class="text-xl font-bold text-gray-700 mt-1">{{ $activeCycle->initial_seed_mass }} <span class="text-xs font-normal text-gray-400">gram</span></p>
+                    <p class="text-xl font-bold text-gray-700 mt-1">{{ number_format($activeCycle->initial_seed_mass, 0, ',', '.') }} <span class="text-xs font-normal text-gray-400">gram</span></p>
                 </div>
                 <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                     <p class="text-xs text-gray-400 font-medium">Total Input Sampah</p>
-                    <p class="text-xl font-bold text-gray-700 mt-1">{{ $activeCycle->total_waste_input }} <span class="text-xs font-normal text-gray-400">kg</span></p>
+                    <p class="text-xl font-bold text-gray-700 mt-1">{{ number_format($activeCycle->total_waste_input, 0, ',', '.') }} <span class="text-xs font-normal text-gray-400">gram</span></p>
                 </div>
                 <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                     <p class="text-xs text-gray-400 font-medium">Rata-rata Suhu</p>
@@ -84,16 +80,29 @@
             </div>
                 
                 <div class="flex justify-between text-[11px] font-bold text-amber-800">
-                    <!-- <span>Terakumulasi: <strong>{{ $accumulatedADD }}</strong> ADD</span>
-                    <span>Target: <strong>{{ $targetADD }}</strong> ADD ({{ $addProgress }}%)</span> -->
+                    </div>
+            </div>
+        </div>
+        @else
+        <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 sm:p-8 mb-6 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
+            <div class="absolute -left-20 -top-20 w-64 h-64 bg-gray-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+            
+            <div class="flex items-center gap-5 relative z-10">
+                <div class="w-16 h-16 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center text-3xl shrink-0">
+                    <i class="fa-solid fa-leaf"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Sistem Standby</h2>
+                    <p class="text-sm text-gray-500 mt-1">Belum ada siklus budidaya yang berjalan di rak Biopond saat ini.</p>
                 </div>
             </div>
+            
+            <button onclick="openModal('modalMulai')" class="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 px-6 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 relative z-10">
+                <i class="fa-solid fa-play"></i> Mulai Siklus Baru
+            </button>
         </div>
     @endif
 
-    <!-- ========================================== -->
-    <!-- BAGIAN 2: RIWAYAT SIKLUS (SELESAI)         -->
-    <!-- ========================================== -->
     <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col">
         <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
             <div>
@@ -128,11 +137,11 @@
                         </td>
 
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                            {{ number_format($fc->total_waste_input, 1) }} kg
+                            {{ number_format($fc->total_waste_input, 0, ',', '.') }} gram
                         </td>
 
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
-                            {{ number_format($fc->harvest_mass, 1) }} kg
+                            {{ number_format($fc->harvest_mass, 0, ',', '.') }} gram
                         </td>
 
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -153,69 +162,72 @@
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- KUMPULAN MODAL (POP-UP)                    -->
-    <!-- ========================================== -->
-
-    <!-- 1. Modal Mulai Siklus -->
     <div id="modalMulai" class="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden transform transition-all">
             <div class="bg-amber-500 px-6 py-4 flex justify-between items-center">
                 <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-play"></i> Mulai Siklus Baru</h3>
                 <button onclick="closeModal('modalMulai')" class="text-amber-100 hover:text-white transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
+            
             <form action="{{ url('/cycle/start') }}" method="POST" class="p-6">
                 @csrf
-                <p class="text-sm text-gray-600 mb-5">Masukkan data inisiasi untuk rak biopond hari ini.</p>
+                <p class="text-sm text-gray-600 mb-5">Masukkan berat bibit ke rak biopond yang akan digunakan.</p>
                 
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Massa Bibit Awal (5-DOL)</label>
-                    <div class="relative">
-                        <input type="number" step="0.1" name="bibit_awal" placeholder="Contoh: 50" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-amber-500 focus:border-amber-500 block w-full p-3 pr-16 outline-none transition-colors" required>
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 font-bold text-sm">gram</div>
-                    </div>
-                </div>
-
                 <div class="mb-6">
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Pakan Sampah Pertama</label>
-                    <div class="relative">
-                        <input type="number" step="0.1" name="pakan_awal" placeholder="Contoh: 5.5" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-amber-500 focus:border-amber-500 block w-full p-3 pr-12 outline-none transition-colors">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 font-bold text-sm">kg</div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Massa Bibit Awal per Rak</label>
+                    
+                    <button type="button" onclick="tarikDataSensor('bibit')" id="btnTarikBibit" class="mb-3 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-bold py-2 px-4 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors">
+                        <i class="fa-solid fa-satellite-dish"></i> <span>Tarik Berat Aktual dari Load Cell</span>
+                    </button>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        @for ($i = 1; $i <= 6; $i++)
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 mb-1">Rak {{ $i }}</label>
+                                <div class="relative">
+                                    <input type="number" step="1" name="bibit_rak[{{ $i }}]" min="0" placeholder="0" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 pr-8 outline-none transition-colors">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 font-bold text-[10px]">g</div>
+                                </div>
+                            </div>
+                        @endfor
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-2">*Biarkan kosong jika sensor load cell sudah mendeteksi otomatis.</p>
+                    <p class="text-[10px] text-gray-400 mt-3">*Kosongkan rak sebelum diberi bibit.</p>
                 </div>
 
                 <div class="flex gap-3">
-                    <button type="button" onclick="closeModal('modalMulai')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition-colors">Batal</button>
-                    <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md">Simpan & Mulai</button>
+                    <button type="button" onclick="closeModal('modalMulai')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition-colors text-sm">Batal</button>
+                    <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md text-sm">Simpan & Mulai</button>
                 </div>
             </form>
         </div>
     </div>
 
     @if($activeCycle)
-    <!-- 2. Modal Catat Pakan Manual -->
     <div id="modalPakan" class="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
         <div class="bg-white rounded-2xl w-full max-w-sm shadow-xl overflow-hidden transform transition-all">
             <div class="px-6 pt-6 pb-4 flex justify-between items-center border-b border-gray-100">
                 <h3 class="text-gray-800 font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-plus text-amber-500"></i> Catat Pakan</h3>
                 <button onclick="closeModal('modalPakan')" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <!-- Form di dalam Modal Tambah Pakan -->
-            <form action="{{ route('cycle.addWaste') }}" method="POST" class="p-6">                @csrf
+            <form action="{{ route('cycle.addWaste') }}" method="POST" class="p-6">                
+                @csrf
+
+                <button type="button" onclick="tarikDataSensor('pakan')" id="btnTarikPakan" class="mb-4 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-bold py-2 px-4 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors">
+                    <i class="fa-solid fa-satellite-dish"></i> <span>Hitung Otomatis (Tarik Delta dari Load Cell)</span>
+                </button>
+
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     @for ($i = 1; $i <= 6; $i++)
                         <div>
                             <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Pakan Rak {{ $i }}</label>
                             <div class="relative">
-                                <!-- Gunakan array pakan_rak[] untuk mengirim data -->
-                                <input type="number" step="0.1" name="pakan_rak[{{ $i }}]" min="0" placeholder="0.0" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 outline-none">
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 font-bold text-xs">kg</div>
+                                <input type="number" step="1" name="pakan_rak[{{ $i }}]" min="0" placeholder="0" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-8 outline-none">
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 font-bold text-xs">g</div>
                             </div>
                         </div>
                     @endfor
                 </div>
-                <p class="text-[10px] text-gray-400 mb-4">*Kosongkan rak yang tidak diberi tambahan pakan. Total akan diakumulasi otomatis.</p>
+                <p class="text-[10px] text-gray-400 mb-4">*Kosongkan rak yang tidak diberi tambahan pakan. Total akan diakumulasi otomatis dalam hitungan gram.</p>
                 
                 <button type="submit" class="w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-xl text-sm px-5 py-3 text-center transition-colors">
                     Simpan Data Pakan
@@ -224,7 +236,6 @@
         </div>
     </div>
 
-    <!-- 3. Modal Akhiri Siklus (Panen) -->
     <div id="modalPanen" class="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden transform transition-all">
             <div class="bg-gray-800 px-6 py-4 flex justify-between items-center">
@@ -240,9 +251,8 @@
                 <div class="mb-4">
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Total Panen Prepupa Aktual</label>
                     <div class="relative">
-                        <!-- Hapus atribut 'required', ubah placeholder agar user tahu ini otomatis -->
-                        <input type="number" step="0.1" name="panen_aktual" placeholder="Otomatis ditarik dari sensor (Rak 7)" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 pr-12 outline-none transition-colors">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 font-bold text-sm">kg</div>
+                        <input type="number" step="1" name="panen_aktual" placeholder="Otomatis ditarik dari sensor (Rak 7)" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 pr-12 outline-none transition-colors">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 font-bold text-sm">g</div>
                     </div>
                     <p class="text-[10px] text-gray-400 mt-1">*Kosongkan form ini untuk menggunakan data pembacaan sensor Load Cell Rak 7 saat ini.</p>
                 </div>
@@ -250,9 +260,8 @@
                 <div class="mb-6">
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Total Sisa Kasgot (Pupuk)</label>
                     <div class="relative">
-                        <!-- Hapus atribut 'required', ubah placeholder agar user tahu ini otomatis -->
-                        <input type="number" step="0.1" name="kasgot_aktual" placeholder="Otomatis ditarik dari sensor (Rak 1-6)" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 pr-12 outline-none transition-colors">
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 font-bold text-sm">kg</div>
+                        <input type="number" step="1" name="kasgot_aktual" placeholder="Otomatis ditarik dari sensor (Rak 1-6)" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 pr-12 outline-none transition-colors">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400 font-bold text-sm">g</div>
                     </div>
                     <p class="text-[10px] text-gray-400 mt-1">*Kosongkan form ini untuk menggunakan total sisa bobot di Load Cell Rak 1-6.</p>
                 </div>
@@ -284,6 +293,85 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }
+    }
+
+    // ==========================================
+    // LOGIKA PENARIKAN DATA SENSOR ON-DEMAND
+    // ==========================================
+    let pollInterval;
+
+    function tarikDataSensor(mode) {
+        let btnId = mode === 'bibit' ? 'btnTarikBibit' : 'btnTarikPakan';
+        let btn = document.getElementById(btnId);
+        let originalHtml = btn.innerHTML;
+        
+        // Ubah tampilan tombol jadi loading
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Menunggu ESP32 (Maks 10s)...</span>`;
+        btn.disabled = true;
+
+        // 1. Ambil data Baseline (Waktu & Berat saat tombol ditekan)
+        fetch('/sensor/latest-json')
+        .then(res => res.json())
+        .then(baseline => {
+            let oldTime = baseline.created_at;
+            let baselineWeights = baseline.biopond || [0,0,0,0,0,0];
+
+            // 2. Tembak Sinyal Force Update ke ESP32
+            fetch('/sensor/force-update', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+            }).then(() => {
+                
+                // 3. Mulai Polling (Cek setiap 2 detik)
+                pollInterval = setInterval(() => {
+                    fetch('/sensor/latest-json')
+                    .then(r => r.json())
+                    .then(newData => {
+                        // Jika ada data baru masuk dari ESP32
+                        if (newData.created_at !== oldTime) {
+                            clearInterval(pollInterval); // Hentikan polling
+                            
+                            let newWeights = newData.biopond || [0,0,0,0,0,0];
+
+                            // Isi Inputan HTML
+                            for(let i = 1; i <= 6; i++) {
+                                let inputEl = document.querySelector(`input[name="${mode}_rak[${i}]"]`);
+                                if(inputEl) {
+                                    let weightGrams = 0;
+                                    if(mode === 'bibit') {
+                                        weightGrams = newWeights[i-1]; // Absolute
+                                    } else if(mode === 'pakan') {
+                                        weightGrams = newWeights[i-1] - baselineWeights[i-1]; // Delta
+                                        if(weightGrams < 0) weightGrams = 0; // Cegah minus
+                                    }
+                                    
+                                    // Semua diproses murni dalam satuan Gram Utuh (Tanpa Desimal)
+                                    let finalVal = Math.round(weightGrams);
+                                    
+                                    // Hanya isi jika ada perubahan yang signifikan (>0)
+                                    if(finalVal > 0) {
+                                        inputEl.value = finalVal;
+                                    }
+                                }
+                            }
+
+                            // Kembalikan tombol ke semula
+                            btn.innerHTML = `<i class="fa-solid fa-check text-green-500"></i> <span class="text-green-600">Berhasil Ditarik!</span>`;
+                            setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 3000);
+                        }
+                    });
+                }, 2000); // Cek per 2 detik
+                
+                // Timeout jika ESP32 mati/offline (Berhenti setelah 15 detik)
+                setTimeout(() => {
+                    clearInterval(pollInterval);
+                    if(btn.disabled) {
+                        btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500"></i> <span class="text-red-500">Gagal! ESP32 Offline</span>`;
+                        setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 3000);
+                    }
+                }, 15000);
+            });
+        });
     }
 </script>
 @endpush

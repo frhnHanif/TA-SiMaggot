@@ -25,6 +25,12 @@ class SensorDataController extends Controller
             'ammonia' => $request->ammonia,
         ]);
 
+        // 2. Reset Force Update
+        $control = DeviceControl::first();
+        if ($control && $control->force_sensor_update) {
+            $control->update(['force_sensor_update' => false]);
+        }
+
         return response()->json(['message' => 'Data berhasil disimpan', 'data' => $data], 201);
     }
 
@@ -40,6 +46,7 @@ class SensorDataController extends Controller
         
         return response()->json([
             'is_manual' => $control->is_manual,
+            'force_sensor_update' => (bool) $control->force_sensor_update,
             'fan' => $control->fan,
             'mist' => $control->mist,
             'mist_stop_at' => $control->mist_stop_at,
@@ -576,5 +583,21 @@ class SensorDataController extends Controller
         }
 
         return $control;
+    }
+
+    // Memicu sinyal tarik data ke ESP32
+    public function triggerForceUpdate() {
+        $control = DeviceControl::first();
+        $control->update(['force_sensor_update' => true]);
+        return response()->json(['status' => 'success', 'message' => 'Sinyal dikirim ke ESP32']);
+    }
+
+    // Mengambil data terakhir untuk AJAX Web
+    public function getLatestJson() {
+        $latest = SensorData::latest()->first();
+        return response()->json([
+            'created_at' => $latest->created_at->format('Y-m-d H:i:s'),
+            'biopond' => is_array($latest->biopond) ? $latest->biopond : json_decode($latest->biopond, true)
+        ]);
     }
 }

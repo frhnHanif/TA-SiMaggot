@@ -80,9 +80,10 @@ class CycleController extends Controller
     // 2. Aksi: Memulai Siklus Baru
     public function store(Request $request)
     {
-        // Bibit awal tetap manual, karena 50 gram terlalu ringan untuk dibaca akurat oleh Load Cell 50kg
+        // Validasi input berupa array untuk setiap rak
         $request->validate([
-            'bibit_awal' => 'required|numeric|min:0',
+            'bibit_rak' => 'required|array',
+            'bibit_rak.*' => 'nullable|numeric|min:0',
         ]);
 
         if (Cycle::where('status', 'berjalan')->exists()) {
@@ -91,27 +92,28 @@ class CycleController extends Controller
 
         $batchId = '#BCH-' . now()->format('Ym') . '-' . str_pad(Cycle::count() + 1, 2, '0', STR_PAD_LEFT);
 
-        // SNAPSHOT PAKAN AWAL: Jika operator tidak mengisi manual, ambil dari pembacaan Load Cell saat ini (Rak 1-6)
-        $pakanAwal = $request->pakan_awal;
-        if (empty($pakanAwal)) {
-            $latestSensor = SensorData::latest()->first();
-            if ($latestSensor) {
-                $biopondArray = is_array($latestSensor->biopond) ? $latestSensor->biopond : json_decode($latestSensor->biopond, true) ?? [];
-                $pakanAwal = array_sum($biopondArray) / 1000; // Convert gram to kg
-            } else {
-                $pakanAwal = 0;
+        // Hitung akumulasi bibit dari seluruh rak yang diisi
+        $totalBibit = 0;
+        foreach ($request->bibit_rak as $bibit) {
+            if (!empty($bibit)) {
+                $totalBibit += (float) $bibit;
             }
+        }
+
+        // Cegah jika pengguna menekan tombol simpan tapi semua rak kosong
+        if ($totalBibit <= 0) {
+            return back()->with('error', 'Gagal! Total bibit awal tidak boleh kosong atau 0.');
         }
 
         Cycle::create([
             'batch_id' => $batchId,
             'start_date' => now(),
-            'initial_seed_mass' => $request->bibit_awal,
-            'total_waste_input' => $pakanAwal,
+            'initial_seed_mass' => $totalBibit, // Simpan hasil akumulasinya saja (dalam Gram)
+            'total_waste_input' => 0, // Pakan di-set 0, diisi terpisah via menu Catat Pakan
             'status' => 'berjalan'
         ]);
 
-        return back()->with('success', 'Siklus budidaya baru berhasil dimulai!');
+        return back()->with('success', "Siklus baru berhasil dimulai dengan total bibit {$totalBibit} gram!");
     }
 
     // 3. Aksi: Menambah Catatan Pakan Manual
@@ -126,7 +128,7 @@ class CycleController extends Controller
         $cycle = Cycle::where('status', 'berjalan')->first();
         
         if ($cycle) {
-            // Hitung total tambahan pakan dari seluruh rak yang diisi
+            // Hitung total tambahan pakan dari seluruh rak yang diisi (Sekarang dalam GRAM)
             $totalTambahan = 0;
             foreach ($request->pakan_rak as $pakan) {
                 if (!empty($pakan)) {
@@ -139,7 +141,7 @@ class CycleController extends Controller
                 $cycle->total_waste_input += $totalTambahan;
                 $cycle->save();
                 
-                return back()->with('success', "Berhasil! Total " . $totalTambahan . " kg pakan ditambahkan ke dalam siklus.");
+                return back()->with('success', "Berhasil! Total " . number_format($totalTambahan, 0, ',', '.') . " gram pakan ditambahkan ke dalam siklus.");
             } else {
                 return back()->with('error', 'Tidak ada data pakan yang dimasukkan.');
             }
@@ -164,20 +166,17 @@ class CycleController extends Controller
             return back()->with('error', 'Data sensor tidak ditemukan. Pastikan ESP32 aktif.');
         }
 
-        // Jika user mengisi manual di form pop-up, gunakan itu. 
-        // Jika form kosong (auto), gunakan data dari Sensor ESP32.
-        
-        // Kasgot = Sisa di Rak 1 - 6
+        // KASGOT: Jika kosong, ambil dari Load Cell (Tidak lagi dibagi 1000 agar tetap dalam Gram)
         $kasgot = $request->kasgot_aktual;
         if (empty($kasgot)) {
             $biopondArray = is_array($latestSensor->biopond) ? $latestSensor->biopond : json_decode($latestSensor->biopond, true) ?? [];
-            $kasgot = array_sum($biopondArray) / 1000; // kg
+            $kasgot = array_sum($biopondArray); // Absolute Grams
         }
 
-        // Panen Prepupa = Data di Rak 7 (harvest)
+        // PANEN: Jika kosong, ambil dari Load Cell (Rak 7)
         $panen = $request->panen_aktual;
         if (empty($panen)) {
-            $panen = $latestSensor->harvest; // Asumsi kolom 'harvest' di DB sudah dalam kg. Jika gram, bagi 1000.
+            $panen = $latestSensor->harvest; // Absolute Grams
         }
 
         $input = $cycle->total_waste_input;
@@ -187,7 +186,6 @@ class CycleController extends Controller
         $eci = ($input > 0) ? ($panen / $input) * 100 : 0;
 
         // RUMUS 2: WRI -> ((Input - Kasgot) / Input) / Durasi Hari * 100%
-        // Bu Vivi's standard formula representation:
         $wri = ($input > 0 && $days > 0) ? ((($input - $kasgot) / $input) / $days) * 100 : 0;
 
         $cycle->update([

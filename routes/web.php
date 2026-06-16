@@ -29,6 +29,9 @@ Route::middleware('auth')->group(function () {
 
     // Rute Global Alert AJAX
     Route::get('/api/check-alerts', [SensorDataController::class, 'checkAlerts']);
+
+    Route::post('/sensor/force-update', [\App\Http\Controllers\SensorDataController::class, 'triggerForceUpdate']);
+    Route::get('/sensor/latest-json', [\App\Http\Controllers\SensorDataController::class, 'getLatestJson']);
 });
 
 
@@ -48,7 +51,7 @@ Route::prefix('configuration-panel')->group(function () {
 
     // 2. Proses Buka Kunci (Submit PIN)
     Route::post('/unlock', function (Illuminate\Http\Request $request) {
-        $pinRahasia = config('maggot.admin_pin');; // <-- GANTI PIN RAHASIAMU DI SINI
+        $pinRahasia = config('maggot.admin_pin'); // <-- GANTI PIN RAHASIAMU DI SINI
         
         if ($request->pin === $pinRahasia) {
             session(['admin_unlocked' => true]);
