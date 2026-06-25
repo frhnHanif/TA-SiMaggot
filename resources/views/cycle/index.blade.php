@@ -113,7 +113,7 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto p-6">
+        <div class="overflow-x-auto p-6" style="contain:layout style">
             <table class="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                     <tr class="border-b-2 border-gray-100">
