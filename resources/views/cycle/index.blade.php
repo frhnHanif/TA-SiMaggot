@@ -313,6 +313,7 @@
     // Fungsi baru untuk modalMulai: per-rak dual-field (maggot + pakan)
     function tarikDataMulai() {
         let btn = document.getElementById('btnTarikMulai');
+        let modal = document.getElementById('modalMulai');
         let originalHtml = btn.innerHTML;
         
         btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Menunggu ESP32 (Maks 1 menit)...</span>`;
@@ -341,9 +342,10 @@
                             let newWeights = newData.biopond || [0,0,0,0,0,0];
 
                             // Isi input per rak: tentukan mana yang manual, mana yang auto
+                            // Scope querySelector ke dalam modalMulai saja
                             for (let i = 1; i <= 6; i++) {
-                                let maggotEl = document.querySelector(`input[name="maggot_rak[${i}]"]`);
-                                let pakanEl = document.querySelector(`input[name="pakan_rak[${i}]"]`);
+                                let maggotEl = modal.querySelector(`input[name="maggot_rak[${i}]"]`);
+                                let pakanEl = modal.querySelector(`input[name="pakan_rak[${i}]"]`);
                                 if (!maggotEl || !pakanEl) continue;
                                 
                                 let pulledWeight = Math.round(newWeights[i-1]);
@@ -383,10 +385,12 @@
         });
     }
 
-    // Fungsi existing untuk modalPakan (Catat Pakan) — tetap tidak berubah
+    // Fungsi existing untuk modalPakan (Catat Pakan) — dengan scoping modal
     function tarikDataSensor(mode) {
         let btnId = mode === 'bibit' ? 'btnTarikBibit' : 'btnTarikPakan';
+        let modalId = mode === 'bibit' ? 'modalMulai' : 'modalPakan';
         let btn = document.getElementById(btnId);
+        let modal = document.getElementById(modalId);
         let originalHtml = btn.innerHTML;
         
         // Ubah tampilan tombol jadi loading
@@ -417,9 +421,9 @@
                             
                             let newWeights = newData.biopond || [0,0,0,0,0,0];
 
-                            // Isi Inputan HTML
+                            // Isi Inputan HTML — scope ke dalam modal yang benar
                             for(let i = 1; i <= 6; i++) {
-                                let inputEl = document.querySelector(`input[name="${mode}_rak[${i}]"]`);
+                                let inputEl = modal.querySelector(`input[name="${mode}_rak[${i}]"]`);
                                 if(inputEl) {
                                     let weightGrams = 0;
                                     if(mode === 'bibit') {

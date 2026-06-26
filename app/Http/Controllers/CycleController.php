@@ -97,14 +97,14 @@ class CycleController extends Controller
         // Hitung akumulasi maggot dan pakan dari seluruh rak
         $totalMaggot = 0;
         foreach ($request->maggot_rak as $val) {
-            if (!empty($val)) {
+            if ($val !== null && $val !== '' && is_numeric($val)) {
                 $totalMaggot += (float) $val;
             }
         }
 
         $totalPakan = 0;
         foreach ($request->pakan_rak as $val) {
-            if (!empty($val)) {
+            if ($val !== null && $val !== '' && is_numeric($val)) {
                 $totalPakan += (float) $val;
             }
         }
@@ -140,14 +140,17 @@ class CycleController extends Controller
             // Hitung total tambahan pakan dari seluruh rak yang diisi (Sekarang dalam GRAM)
             $totalTambahan = 0;
             foreach ($request->pakan_rak as $pakan) {
-                if (!empty($pakan)) {
+                // Gunakan is_numeric + strlen agar nilai "0" tidak diabaikan
+                if ($pakan !== null && $pakan !== '' && is_numeric($pakan)) {
                     $totalTambahan += (float) $pakan;
                 }
             }
 
             // Jika ada pakan yang ditambahkan, update database
             if ($totalTambahan > 0) {
-                $cycle->total_waste_input += $totalTambahan;
+                // Pastikan nilai di-cast ke float sebelum operasi += (hindari string concat)
+                $current = (float) $cycle->total_waste_input;
+                $cycle->total_waste_input = $current + $totalTambahan;
                 $cycle->save();
                 
                 return back()->with('success', "Berhasil! Total " . number_format($totalTambahan, 0, ',', '.') . " gram pakan ditambahkan ke dalam siklus.");
