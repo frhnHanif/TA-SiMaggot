@@ -163,40 +163,50 @@
     </div>
 
     <div id="modalMulai" class="fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
-        <div class="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden transform transition-all">
-            <div class="bg-amber-500 px-6 py-4 flex justify-between items-center">
+        <div class="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden" style="max-height: 80vh; display: flex; flex-direction: column;">
+            <div class="bg-amber-500 px-6 py-4 flex justify-between items-center" style="flex-shrink: 0;">
                 <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-play"></i> Mulai Siklus Baru</h3>
                 <button onclick="closeModal('modalMulai')" class="text-amber-100 hover:text-white transition-colors"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             
-            <form action="{{ url('/cycle/start') }}" method="POST" class="p-6">
+            <form action="{{ url('/cycle/start') }}" method="POST" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                 @csrf
-                <p class="text-sm text-gray-600 mb-5">Masukkan berat bibit ke rak biopond yang akan digunakan.</p>
-                
-                <div class="mb-6">
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Massa Bibit Awal per Rak</label>
+                <div class="p-6 pb-2" style="overflow-y: auto; flex: 1 1 auto;">
+                    <p class="text-sm text-gray-600 mb-4">Isi <strong>salah satu</strong> massa yang diketahui per rak (maggot atau pakan), lalu tarik data dari load cell. Massa lainnya akan dihitung otomatis.</p>
                     
-                    <button type="button" onclick="tarikDataSensor('bibit')" id="btnTarikBibit" class="mb-3 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-bold py-2 px-4 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors">
-                        <i class="fa-solid fa-satellite-dish"></i> <span>Tarik Berat Aktual dari Load Cell</span>
+                    <button type="button" onclick="tarikDataMulai()" id="btnTarikMulai" class="mb-4 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-bold py-2 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+                        <i class="fa-solid fa-satellite-dish"></i> <span>Tarik Data dari Load Cell</span>
                     </button>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-2.5">
                         @for ($i = 1; $i <= 6; $i++)
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-500 mb-1">Rak {{ $i }}</label>
-                                <div class="relative">
-                                    <input type="number" step="1" name="bibit_rak[{{ $i }}]" min="0" placeholder="0" class="bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 pr-8 outline-none transition-colors">
-                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 font-bold text-[10px]">g</div>
+                            <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                <label class="block text-[11px] font-bold text-gray-500 mb-2">Rak {{ $i }}</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-medium text-emerald-600 mb-1">Massa Maggot</label>
+                                        <div class="relative">
+                                            <input type="number" step="1" name="maggot_rak[{{ $i }}]" min="0" placeholder="0" class="bg-white border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block w-full p-2 pr-8 outline-none transition-colors">
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-gray-400 font-bold text-[10px]">g</div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-medium text-blue-600 mb-1">Massa Pakan</label>
+                                        <div class="relative">
+                                            <input type="number" step="1" name="pakan_rak[{{ $i }}]" min="0" placeholder="0" class="bg-white border border-gray-200 text-gray-800 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 pr-8 outline-none transition-colors">
+                                            <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-gray-400 font-bold text-[10px]">g</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         @endfor
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-3">*Kosongkan rak sebelum diberi bibit.</p>
+                    <p class="text-[10px] text-gray-400 mt-3">*Isi salah satu kolom per rak. Jika keduanya kosong, data load cell akan dianggap sebagai massa pakan.</p>
                 </div>
 
-                <div class="flex gap-3">
-                    <button type="button" onclick="closeModal('modalMulai')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition-colors text-sm">Batal</button>
-                    <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md text-sm">Simpan & Mulai</button>
+                <div class="flex gap-3 p-6 pt-3 border-t border-gray-100" style="flex-shrink: 0;">
+                    <button type="button" onclick="closeModal('modalMulai')" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-4 rounded-xl transition-colors text-sm">Batal</button>
+                    <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl transition-colors shadow-md text-sm">Simpan</button>
                 </div>
             </form>
         </div>
@@ -300,13 +310,87 @@
     // ==========================================
     let pollInterval;
 
+    // Fungsi baru untuk modalMulai: per-rak dual-field (maggot + pakan)
+    function tarikDataMulai() {
+        let btn = document.getElementById('btnTarikMulai');
+        let originalHtml = btn.innerHTML;
+        
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Menunggu ESP32 (Maks 1 menit)...</span>`;
+        btn.disabled = true;
+
+        // 1. Ambil data Baseline
+        fetch('/sensor/latest-json')
+        .then(res => res.json())
+        .then(baseline => {
+            let oldTime = baseline.created_at;
+
+            // 2. Tembak Sinyal Force Update ke ESP32
+            fetch('/sensor/force-update', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+            }).then(() => {
+                
+                // 3. Mulai Polling (Cek setiap 2 detik)
+                pollInterval = setInterval(() => {
+                    fetch('/sensor/latest-json')
+                    .then(r => r.json())
+                    .then(newData => {
+                        if (newData.created_at !== oldTime) {
+                            clearInterval(pollInterval);
+                            
+                            let newWeights = newData.biopond || [0,0,0,0,0,0];
+
+                            // Isi input per rak: tentukan mana yang manual, mana yang auto
+                            for (let i = 1; i <= 6; i++) {
+                                let maggotEl = document.querySelector(`input[name="maggot_rak[${i}]"]`);
+                                let pakanEl = document.querySelector(`input[name="pakan_rak[${i}]"]`);
+                                if (!maggotEl || !pakanEl) continue;
+                                
+                                let pulledWeight = Math.round(newWeights[i-1]);
+                                let maggotVal = parseFloat(maggotEl.value) || 0;
+                                let pakanVal = parseFloat(pakanEl.value) || 0;
+                                
+                                if (pakanVal > 0) {
+                                    // User tahu massa pakan → hitung maggot
+                                    let calc = pulledWeight - pakanVal;
+                                    maggotEl.value = calc > 0 ? Math.round(calc) : 0;
+                                } else if (maggotVal > 0) {
+                                    // User tahu massa maggot → hitung pakan
+                                    let calc = pulledWeight - maggotVal;
+                                    pakanEl.value = calc > 0 ? Math.round(calc) : 0;
+                                } else {
+                                    // Keduanya kosong → default: semua jadi pakan
+                                    pakanEl.value = pulledWeight;
+                                    maggotEl.value = 0;
+                                }
+                            }
+
+                            btn.innerHTML = `<i class="fa-solid fa-check text-green-500"></i> <span class="text-green-600">Berhasil Ditarik!</span>`;
+                            setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 3000);
+                        }
+                    });
+                }, 2000);
+                
+                // Timeout setelah 60 detik
+                setTimeout(() => {
+                    clearInterval(pollInterval);
+                    if (btn.disabled) {
+                        btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500"></i> <span class="text-red-500">Gagal! ESP32 Offline</span>`;
+                        setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 3000);
+                    }
+                }, 60000);
+            });
+        });
+    }
+
+    // Fungsi existing untuk modalPakan (Catat Pakan) — tetap tidak berubah
     function tarikDataSensor(mode) {
         let btnId = mode === 'bibit' ? 'btnTarikBibit' : 'btnTarikPakan';
         let btn = document.getElementById(btnId);
         let originalHtml = btn.innerHTML;
         
         // Ubah tampilan tombol jadi loading
-        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Menunggu ESP32 (Maks 10s)...</span>`;
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Menunggu ESP32 (Maks 1 menit)...</span>`;
         btn.disabled = true;
 
         // 1. Ambil data Baseline (Waktu & Berat saat tombol ditekan)
@@ -347,11 +431,8 @@
                                     
                                     // Semua diproses murni dalam satuan Gram Utuh (Tanpa Desimal)
                                     let finalVal = Math.round(weightGrams);
-                                    
-                                    // Hanya isi jika ada perubahan yang signifikan (>0)
-                                    if(finalVal > 0) {
-                                        inputEl.value = finalVal;
-                                    }
+                                    if (finalVal < 0) finalVal = 0;
+                                    inputEl.value = finalVal;
                                 }
                             }
 
@@ -362,14 +443,14 @@
                     });
                 }, 2000); // Cek per 2 detik
                 
-                // Timeout jika ESP32 mati/offline (Berhenti setelah 15 detik)
+                // Timeout jika ESP32 mati/offline (Berhenti setelah 60 detik / 1 menit)
                 setTimeout(() => {
                     clearInterval(pollInterval);
                     if(btn.disabled) {
                         btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500"></i> <span class="text-red-500">Gagal! ESP32 Offline</span>`;
                         setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 3000);
                     }
-                }, 15000);
+                }, 60000);
             });
         });
     }

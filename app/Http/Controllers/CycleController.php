@@ -80,10 +80,12 @@ class CycleController extends Controller
     // 2. Aksi: Memulai Siklus Baru
     public function store(Request $request)
     {
-        // Validasi input berupa array untuk setiap rak
+        // Validasi input: dua array (maggot dan pakan) per rak
         $request->validate([
-            'bibit_rak' => 'required|array',
-            'bibit_rak.*' => 'nullable|numeric|min:0',
+            'maggot_rak' => 'required|array',
+            'maggot_rak.*' => 'nullable|numeric|min:0',
+            'pakan_rak' => 'required|array',
+            'pakan_rak.*' => 'nullable|numeric|min:0',
         ]);
 
         if (Cycle::where('status', 'berjalan')->exists()) {
@@ -92,28 +94,35 @@ class CycleController extends Controller
 
         $batchId = '#BCH-' . now()->format('Ym') . '-' . str_pad(Cycle::count() + 1, 2, '0', STR_PAD_LEFT);
 
-        // Hitung akumulasi bibit dari seluruh rak yang diisi
-        $totalBibit = 0;
-        foreach ($request->bibit_rak as $bibit) {
-            if (!empty($bibit)) {
-                $totalBibit += (float) $bibit;
+        // Hitung akumulasi maggot dan pakan dari seluruh rak
+        $totalMaggot = 0;
+        foreach ($request->maggot_rak as $val) {
+            if (!empty($val)) {
+                $totalMaggot += (float) $val;
             }
         }
 
-        // Cegah jika pengguna menekan tombol simpan tapi semua rak kosong
-        if ($totalBibit <= 0) {
-            return back()->with('error', 'Gagal! Total bibit awal tidak boleh kosong atau 0.');
+        $totalPakan = 0;
+        foreach ($request->pakan_rak as $val) {
+            if (!empty($val)) {
+                $totalPakan += (float) $val;
+            }
+        }
+
+        // Cegah jika semua rak kosong (baik maggot maupun pakan = 0)
+        if ($totalMaggot <= 0 && $totalPakan <= 0) {
+            return back()->with('error', 'Gagal! Minimal salah satu massa (maggot atau pakan) harus diisi.');
         }
 
         Cycle::create([
             'batch_id' => $batchId,
             'start_date' => now(),
-            'initial_seed_mass' => $totalBibit, // Simpan hasil akumulasinya saja (dalam Gram)
-            'total_waste_input' => 0, // Pakan di-set 0, diisi terpisah via menu Catat Pakan
+            'initial_seed_mass' => $totalMaggot,      // Total massa maggot (bibit)
+            'total_waste_input' => $totalPakan,        // Total massa pakan awal
             'status' => 'berjalan'
         ]);
 
-        return back()->with('success', "Siklus baru berhasil dimulai dengan total bibit {$totalBibit} gram!");
+        return back()->with('success', "Siklus baru berhasil dimulai! Maggot: {$totalMaggot} g, Pakan: {$totalPakan} g.");
     }
 
     // 3. Aksi: Menambah Catatan Pakan Manual
