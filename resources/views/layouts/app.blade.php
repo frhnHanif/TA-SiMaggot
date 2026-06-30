@@ -52,10 +52,10 @@
     <!-- NAVBAR DESKTOP & PROFILE -->
     <nav class="fixed top-4 left-4 right-4 z-50 bg-white/90 backdrop-blur-md shadow-sm border border-gray-100 rounded-[2rem] px-4 sm:px-6 py-3 flex justify-between items-center max-w-screen-2xl mx-auto">
         
-       <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onclick="openAboutModal()" title="Tentang SiMaggot">
+       <a href="/" class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" title="Dashboard">
             <img src="{{ asset('icon.png') }}" alt="SiMaggot" class="w-10 h-10 object-contain">
             <span class="font-extrabold text-xl text-gray-800 tracking-tight">Si<span class="text-amber-500">Maggot</span></span>
-        </div>
+        </a>
 
         <div class="hidden lg:flex items-center bg-gray-50 p-1 rounded-full border border-gray-200 shadow-inner">
             <a href="/" class="{{ request()->is('/') ? 'bg-white shadow-sm text-gray-900 font-bold' : 'text-gray-500 hover:text-gray-800 font-medium' }} px-5 py-2 rounded-full text-sm transition-all duration-300 flex items-center gap-2">
@@ -81,6 +81,11 @@
 
         <!-- PROFILE & LOGIN/LOGOUT -->
         <div class="flex items-center gap-3 relative">
+            <!-- Tombol Tentang (selalu tampil) -->
+            <button onclick="openAboutModal()" class="w-10 h-10 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 bg-white hover:bg-gray-50 transition-all hover:shadow-sm" title="Tentang">
+                <i class="fa-solid fa-circle-info"></i>
+            </button>
+
             @auth
                 <!-- Dropdown Notifikasi -->
                 <div class="relative group" id="notifContainer">
