@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'SiMaggot Dashboard')</title>
     
+    {{-- Favicon --}}
+    <link rel="icon" type="image/png" href="{{ asset('icon.png') }}">
+    
     {{-- Preconnect: buka koneksi lebih awal ke origin eksternal --}}
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -39,6 +42,9 @@
         .below-fold { content-visibility: auto; contain-intrinsic-size: auto 500px; }
         /* Placeholder dimensi container chart (halaman statistik) */
         .chart-container { min-height: 300px; contain: layout style; }
+        /* Animasi modal */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
     </style>
 </head>
 <body class="text-gray-800 antialiased font-sans relative">
@@ -46,10 +52,8 @@
     <!-- NAVBAR DESKTOP & PROFILE -->
     <nav class="fixed top-4 left-4 right-4 z-50 bg-white/90 backdrop-blur-md shadow-sm border border-gray-100 rounded-[2rem] px-4 sm:px-6 py-3 flex justify-between items-center max-w-screen-2xl mx-auto">
         
-       <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center text-white shadow-inner">
-                <i class="fa-solid fa-worm"></i>
-            </div>
+       <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" onclick="openAboutModal()" title="Tentang SiMaggot">
+            <img src="{{ asset('icon.png') }}" alt="SiMaggot" class="w-10 h-10 object-contain">
             <span class="font-extrabold text-xl text-gray-800 tracking-tight">Si<span class="text-amber-500">Maggot</span></span>
         </div>
 
@@ -103,12 +107,15 @@
                 </div>
 
                 <!-- Tampil Jika Sudah Login -->
-                <div class="flex items-center gap-2 bg-white pr-4 pl-1 py-1 rounded-full border border-gray-200 hover:shadow-sm transition-all group relative cursor-pointer">
+                <div id="profileDropdown" class="flex items-center gap-2 bg-white pr-4 pl-1 py-1 rounded-full border border-gray-200 hover:shadow-sm transition-all relative cursor-pointer" onclick="toggleLogoutDropdown()">
                     <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=f59e0b&color=fff&bold=true" alt="Profile" class="w-8 h-8 rounded-full" width="32" height="32">
                     <span class="text-sm font-bold text-gray-700 hidden md:block">{{ Auth::user()->name }}</span>
                     
                     <!-- Dropdown Logout -->
-                    <div class="absolute top-full right-0 mt-2 w-32 bg-white border border-gray-100 shadow-lg rounded-xl overflow-hidden hidden group-hover:block">
+                    <div id="logoutDropdown" class="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-100 shadow-lg rounded-xl overflow-hidden hidden">
+                        <button onclick="openAboutModal()" class="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 font-medium flex items-center gap-2 border-b border-gray-100">
+                            <i class="fa-solid fa-circle-info"></i> Tentang
+                        </button>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-bold flex items-center gap-2">
@@ -172,58 +179,47 @@
     <!-- Script Global Alert & Dropdown Khusus Pengelola (Auth) -->
     @auth
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-        // 1. Inisialisasi Data dari Local Storage
-        let readAlerts = JSON.parse(localStorage.getItem('siMaggotReadAlerts') || '[]');
-        let toastedAlerts = []; // Mencegah pop-up Toast muncul berulang di sesi yang sama
-        let currentAlerts = []; // Menampung hasil fetch terbaru
+        // Variabel global untuk notifikasi
+        var readAlerts = JSON.parse(localStorage.getItem('siMaggotReadAlerts') || '[]');
+        var toastedAlerts = [];
+        var currentAlerts = [];
 
-        // 2. Fungsi Buka/Tutup Dropdown
+        // Fungsi Buka/Tutup Dropdown (global, dipanggil dari onclick)
         function toggleNotifDropdown() {
             const dropdown = document.getElementById('notifDropdown');
-            dropdown.classList.toggle('hidden');
+            if (dropdown) dropdown.classList.toggle('hidden');
         }
 
-        // Tutup dropdown jika user klik di luar area notifikasi
-        document.addEventListener('click', function(event) {
-            const container = document.getElementById('notifContainer');
-            const dropdown = document.getElementById('notifDropdown');
-            if (container && !container.contains(event.target)) {
-                dropdown.classList.add('hidden');
-            }
-        });
-
-        // 3. Fungsi Tandai Satu Dibaca
+        // Fungsi Tandai Satu Dibaca (global, dipanggil dari onclick)
         function markAsRead(id) {
             if (!readAlerts.includes(id)) {
                 readAlerts.push(id);
-                // Batasi memori agar tidak penuh (simpan 100 ID terakhir saja)
                 if (readAlerts.length > 100) readAlerts.shift();
                 localStorage.setItem('siMaggotReadAlerts', JSON.stringify(readAlerts));
             }
-            renderNotifList(); // Refresh tampilan
+            renderNotifList();
         }
 
-        // 4. Fungsi Tandai Semua Dibaca
+        // Fungsi Tandai Semua Dibaca (global, dipanggil dari onclick)
         function markAllAsRead() {
             currentAlerts.forEach(alert => {
                 if (!readAlerts.includes(alert.id)) readAlerts.push(alert.id);
             });
             localStorage.setItem('siMaggotReadAlerts', JSON.stringify(readAlerts));
             renderNotifList();
-            toggleNotifDropdown(); // Tutup dropdown
+            toggleNotifDropdown();
         }
 
-        // 5. Render HTML untuk Dropdown
+        // Render HTML untuk Dropdown
         function renderNotifList() {
             const list = document.getElementById('notifList');
             const badge = document.getElementById('notifBadge');
-            
-            // Filter hanya notif yang belum dibaca
+            if (!list || !badge) return;
+
             const unreadAlerts = currentAlerts.filter(a => !readAlerts.includes(a.id));
 
             if (unreadAlerts.length > 0) {
-                badge.classList.remove('hidden'); // Munculkan titik merah
+                badge.classList.remove('hidden');
                 let html = '';
                 unreadAlerts.forEach(alert => {
                     let iconClass = alert.type === 'danger' ? 'text-red-500 bg-red-50' : 
@@ -249,7 +245,7 @@
                 });
                 list.innerHTML = html;
             } else {
-                badge.classList.add('hidden'); // Sembunyikan titik merah
+                badge.classList.add('hidden');
                 list.innerHTML = `
                     <div class="p-8 flex flex-col items-center justify-center text-center">
                         <div class="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-3 text-xl">
@@ -262,7 +258,7 @@
             }
         }
 
-        // 6. Tampilkan Toast (Tetap dipertahankan)
+        // Tampilkan Toast
         function showToast(alert) {
             const container = document.getElementById('toast-container');
             let colors = alert.type === 'danger' ? 'bg-red-50 border-red-200 text-red-800' : 
@@ -288,21 +284,20 @@
             }, 8000);
         }
 
-        // 7. Ambil Data dari API
+        // Ambil Data dari API
         function fetchAlerts() {
             fetch('/api/check-alerts')
                 .then(response => response.json())
                 .then(data => {
                     if (data.alerts) {
                         currentAlerts = data.alerts;
-                        renderNotifList(); // Update Dropdown & Badge
+                        renderNotifList();
 
-                        // Cek apakah ada notif baru yang belum ditandai dibaca DAN belum pernah di-toast
                         const unreadAlerts = currentAlerts.filter(a => !readAlerts.includes(a.id));
                         unreadAlerts.forEach(alert => {
                             if (!toastedAlerts.includes(alert.id)) {
-                                showToast(alert); // Munculkan Pop-up
-                                toastedAlerts.push(alert.id); // Catat agar tidak pop-up lagi
+                                showToast(alert);
+                                toastedAlerts.push(alert.id);
                             }
                         });
                     }
@@ -310,10 +305,21 @@
                 .catch(error => console.error('Error:', error));
         }
 
-        // Jalankan polling
-        setTimeout(fetchAlerts, 2000); 
-        setInterval(fetchAlerts, 60000);
-        }); // END DOMContentLoaded
+        // Inisialisasi saat DOM siap
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tutup dropdown jika user klik di luar area notifikasi
+            document.addEventListener('click', function(event) {
+                const container = document.getElementById('notifContainer');
+                const dropdown = document.getElementById('notifDropdown');
+                if (container && dropdown && !container.contains(event.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+
+            // Jalankan polling
+            setTimeout(fetchAlerts, 2000); 
+            setInterval(fetchAlerts, 60000);
+        });
     </script>
     @endauth
 
@@ -322,6 +328,43 @@
 
     <!-- 2. Script Universal (Auto-Refresh untuk Publik & Admin) -->
     <script>
+        // Fungsi toggle dropdown logout
+        function toggleLogoutDropdown() {
+            const dropdown = document.getElementById('logoutDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+            }
+        }
+
+        // Fungsi buka modal About
+        function openAboutModal() {
+            const modal = document.getElementById('aboutModal');
+            const dropdown = document.getElementById('logoutDropdown');
+            if (modal) modal.style.display = 'flex';
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+
+        // Fungsi tutup modal About
+        function closeAboutModal() {
+            const modal = document.getElementById('aboutModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // Tutup dropdown logout & modal about saat klik di luar
+        document.addEventListener('click', function(event) {
+            const profile = document.getElementById('profileDropdown');
+            const logoutDropdown = document.getElementById('logoutDropdown');
+            const aboutModal = document.getElementById('aboutModal');
+            
+            // Jangan tutup jika klik di dalam profile atau modal
+            if (profile && profile.contains(event.target)) return;
+            if (aboutModal && aboutModal.style.display === 'flex' && event.target.closest('#aboutModal .bg-white')) return;
+            
+            if (logoutDropdown && !logoutDropdown.classList.contains('hidden')) {
+                logoutDropdown.classList.add('hidden');
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
         const autoRefreshPages = ['/', '/statistik', '/logbook']; 
         const currentPath = window.location.pathname;
@@ -346,6 +389,37 @@
         }
         }); // END DOMContentLoaded
     </script>
+
+    <!-- About Modal -->
+    <div id="aboutModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);" onclick="closeAboutModal()">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full mx-4 p-8 text-center relative" onclick="event.stopPropagation()" style="animation: fadeIn 0.2s ease-out;">
+            <button onclick="closeAboutModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <img src="{{ asset('icon.png') }}" alt="SiMaggot" class="w-20 h-20 object-contain mx-auto mb-4">
+            <h2 class="font-extrabold text-2xl text-gray-800 tracking-tight mb-1">Si<span class="text-amber-500">Maggot</span></h2>
+            <p class="text-xs text-gray-400 mb-6">Bagian dari Tugas Akhir</p>
+            
+            <p class="text-sm font-semibold text-gray-700 leading-relaxed mb-6 px-2">
+                RANCANG BANGUN SMART VERTICAL BIOPOND BUDIDAYA MAGGOT BSF BERBASIS IOT UNTUK PENGENDALIAN PARAMETER LINGKUNGAN PADA BIOKONVERSI DI TPST UNDIP
+            </p>
+            
+            <div class="space-y-1.5 mb-6 text-left bg-gray-50 rounded-2xl p-4">
+                <p class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">Pembimbing</p>
+                <p class="text-xs text-gray-600"><span class="font-medium text-gray-800">Pembimbing 1:</span> Ir. M. Arfan S.Kom., M.Eng.</p>
+                <p class="text-xs text-gray-600"><span class="font-medium text-gray-800">Pembimbing 2:</span> Ir. Budi Setiyono S.T., M.T.</p>
+                <p class="text-xs text-gray-600"><span class="font-medium text-gray-800">Pembimbing 3:</span> Dr. Vivi Endar Herawati, S.Pi., M.Si.</p>
+            </div>
+            
+            <div class="space-y-1.5 text-left bg-amber-50 rounded-2xl p-4">
+                <p class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">Mahasiswa</p>
+                <p class="text-xs text-gray-600"><span class="font-medium text-gray-800">Mahasiswa 1:</span> Farhan Hanif Rahmansyah (21060122120002)</p>
+                <p class="text-xs text-gray-600"><span class="font-medium text-gray-800">Mahasiswa 2:</span> Yusuf Nadim Irawan (21060122120029)</p>
+                <p class="text-xs text-gray-600"><span class="font-medium text-gray-800">Mahasiswa 3:</span> Noor Aqila Zayyana Fikki (21060122120037)</p>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

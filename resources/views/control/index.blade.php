@@ -114,14 +114,14 @@
                     <i class="fa-solid fa-temperature-half text-amber-500 text-lg"></i>
                     <div>
                         <p class="text-[10px] text-amber-600/70 font-bold uppercase tracking-wider mb-0.5">Suhu Udara</p>
-                        <p class="text-lg font-black text-amber-600">{{ $temp }} <span class="text-xs font-normal">&deg;C</span></p>
+                        <p class="text-lg font-black text-amber-600">{{ number_format($temp, 2, ',', '.') }} <span class="text-xs font-normal">&deg;C</span></p>
                     </div>
                 </div>
                 <div class="flex-1 bg-blue-50/50 rounded-xl p-3 border border-blue-100 flex items-center gap-3">
                     <i class="fa-solid fa-droplet text-blue-500 text-lg"></i>
                     <div>
                         <p class="text-[10px] text-blue-600/70 font-bold uppercase tracking-wider mb-0.5">Kelembapan</p>
-                        <p class="text-lg font-black text-blue-600">{{ $hum }} <span class="text-xs font-normal">%</span></p>
+                        <p class="text-lg font-black text-blue-600">{{ number_format($hum, 2, ',', '.') }} <span class="text-xs font-normal">%</span></p>
                     </div>
                 </div>
             </div>
@@ -185,7 +185,7 @@
                 @foreach($mistArray as $index => $val)
                     @php 
                         $isOn = $val === 10; 
-                        $soilMoisture = isset($soilData[$index]) ? rtrim(rtrim(number_format((float)$soilData[$index], 1), '0'), '.') : '--';
+                        $soilMoisture = isset($soilData[$index]) ? rtrim(rtrim(number_format((float)$soilData[$index], 1, ',', '.'), '0'), ',') : '--';
                     @endphp
                     <button type="button" 
                         id="btn-mist-{{ $index }}"

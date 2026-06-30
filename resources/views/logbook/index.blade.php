@@ -153,16 +153,16 @@
                                 <span class="sm:hidden block text-[11px] text-gray-400 font-normal">{{ $log->created_at->format('H:i') }}</span>
                             </td>
                             <td class="py-4 text-gray-600 hidden sm:table-cell">{{ $log->created_at->format('H:i') }}</td>
-                            <td class="py-4 text-gray-600">{{ $log->temp }} &deg;C</td>
-                            <td class="py-4 text-gray-600 hidden md:table-cell">{{ $log->hum }} %</td>
-                            <td class="py-4 text-gray-600">{{ number_format($avgSoil, 1) }} %</td>
+                            <td class="py-4 text-gray-600">{{ number_format($log->temp, 2, ',', '.') }} &deg;C</td>
+                            <td class="py-4 text-gray-600 hidden md:table-cell">{{ number_format($log->hum, 2, ',', '.') }} %</td>
+                            <td class="py-4 text-gray-600">{{ number_format($avgSoil, 1, ',', '.') }} %</td>
                             <td class="py-3">
                                 <span class="px-2 py-1 text-[10px] font-bold rounded-md {{ $log->ammonia > config('maggot.thresholds.ammonia.max_safe') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
                                     {{ $log->ammonia }} ppm
                                 </span>
                             </td>
                             <td class="py-4 text-right pr-2 font-bold text-gray-700">
-                                {{ number_format($totalBerat, 2) }} kg
+                                {{ number_format($totalBerat, 2, ',', '.') }} kg
                             </td>
                         </tr>
 
@@ -243,19 +243,19 @@
                     <div class="grid grid-cols-4 gap-2 mb-3">
                         <div class="bg-white rounded-lg p-2 text-center border border-gray-100">
                             <span class="block text-[9px] text-gray-400 uppercase font-bold mb-0.5">Suhu</span>
-                            <span class="text-sm font-black text-gray-800">{{ $log->temp }}&deg;</span>
+                            <span class="text-sm font-black text-gray-800">{{ number_format($log->temp, 2, ',', '.') }}&deg;</span>
                         </div>
                         <div class="bg-white rounded-lg p-2 text-center border border-gray-100">
                             <span class="block text-[9px] text-gray-400 uppercase font-bold mb-0.5">Hum Udara</span>
-                            <span class="text-sm font-black text-gray-800">{{ $log->hum }}%</span>
+                            <span class="text-sm font-black text-gray-800">{{ number_format($log->hum, 2, ',', '.') }}%</span>
                         </div>
                         <div class="bg-white rounded-lg p-2 text-center border border-gray-100">
                             <span class="block text-[9px] text-gray-400 uppercase font-bold mb-0.5">Tanah Avg</span>
-                            <span class="text-sm font-black text-gray-800">{{ number_format($avgSoil, 1) }}%</span>
+                            <span class="text-sm font-black text-gray-800">{{ number_format($avgSoil, 1, ',', '.') }}%</span>
                         </div>
                         <div class="bg-white rounded-lg p-2 text-center border border-gray-100">
                             <span class="block text-[9px] text-gray-400 uppercase font-bold mb-0.5">Total Massa</span>
-                            <span class="text-sm font-black text-gray-800">{{ number_format($totalBerat, 1) }}<span class="text-[9px] font-medium text-gray-400">kg</span></span>
+                            <span class="text-sm font-black text-gray-800">{{ number_format($totalBerat, 1, ',', '.') }}<span class="text-[9px] font-medium text-gray-400">kg</span></span>
                         </div>
                     </div>
 

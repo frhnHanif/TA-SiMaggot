@@ -60,7 +60,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-3">
                     <div>
                         <h4 class="text-sm font-bold text-amber-900 flex items-center gap-2">
-                            <span>📅</span> Prediksi Waktu Panen
+                            Prediksi Waktu Panen
                         </h4>
                         <p class="text-xs text-amber-700/80 mt-0.5">*Perhitungan otomatis berdasarkan model Accumulated Degree Days (ADD)</p>
                     </div>
@@ -145,11 +145,11 @@
                         </td>
 
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-bold text-blue-600">{{ number_format($fc->eci_result, 1) }} %</span>
+                            <span class="text-sm font-bold text-blue-600">{{ number_format($fc->eci_result, 1, ',', '.') }} %</span>
                         </td>
 
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-bold text-emerald-600">{{ number_format($fc->wri_result, 1) }} %</span>
+                            <span class="text-sm font-bold text-emerald-600">{{ number_format($fc->wri_result, 1, ',', '.') }} %</span>
                         </td>
                     </tr>
                     @empty

@@ -53,7 +53,8 @@ class WhiteboxBusinessFlowTest extends TestCase
     public function cycle_start_valid_with_six_racks(): void
     {
         $response = $this->actingAs($this->userA)->post('/cycle/start', [
-            'bibit_rak' => [500, 600, 700, 800, 500, 400],
+            'maggot_rak' => [500, 600, 700, 800, 500, 400],
+            'pakan_rak'  => [100, 100, 100, 100, 100, 100],
         ]);
 
         $response->assertRedirect();
@@ -61,9 +62,9 @@ class WhiteboxBusinessFlowTest extends TestCase
 
         $cycle = Cycle::first();
         $this->assertNotNull($cycle);
-        $this->assertEquals(3500, $cycle->initial_seed_mass); // 500+600+700+800+500+400
+        $this->assertEquals(3500, $cycle->initial_seed_mass); // maggot: 500+600+700+800+500+400
         $this->assertEquals('berjalan', $cycle->status);
-        $this->assertEquals(0, $cycle->total_waste_input);
+        $this->assertEquals(600, $cycle->total_waste_input);  // pakan: 6×100
         $this->assertStringStartsWith('#BCH-', $cycle->batch_id);
     }
 
@@ -71,7 +72,8 @@ class WhiteboxBusinessFlowTest extends TestCase
     public function cycle_start_all_racks_zero_rejected(): void
     {
         $response = $this->actingAs($this->userA)->post('/cycle/start', [
-            'bibit_rak' => [0, 0, 0, 0, 0, 0],
+            'maggot_rak' => [0, 0, 0, 0, 0, 0],
+            'pakan_rak'  => [0, 0, 0, 0, 0, 0],
         ]);
 
         $response->assertRedirect();
@@ -82,7 +84,6 @@ class WhiteboxBusinessFlowTest extends TestCase
     #[Test]
     public function cycle_start_when_active_cycle_exists_rejected(): void
     {
-        // Buat siklus berjalan dulu
         Cycle::create([
             'batch_id' => '#BCH-202606-01',
             'start_date' => now(),
@@ -92,7 +93,8 @@ class WhiteboxBusinessFlowTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->userA)->post('/cycle/start', [
-            'bibit_rak' => [500, 600, 700, 800, 500, 400],
+            'maggot_rak' => [500, 600, 700, 800, 500, 400],
+            'pakan_rak'  => [100, 100, 100, 100, 100, 100],
         ]);
 
         $response->assertRedirect();
@@ -104,31 +106,35 @@ class WhiteboxBusinessFlowTest extends TestCase
     public function cycle_start_partial_racks_filled(): void
     {
         $response = $this->actingAs($this->userA)->post('/cycle/start', [
-            'bibit_rak' => [500, null, 700, null, 500, 400],
+            'maggot_rak' => [500, null, 700, null, 500, 400],
+            'pakan_rak'  => [200, 0,    300, 0,    0,   0],
         ]);
 
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
         $cycle = Cycle::first();
-        $this->assertEquals(2100, $cycle->initial_seed_mass); // 500+700+500+400
+        $this->assertEquals(2100, $cycle->initial_seed_mass); // maggot: 500+700+500+400
+        $this->assertEquals(500, $cycle->total_waste_input);  // pakan: 200+300
     }
 
     #[Test]
     public function cycle_start_negative_value_rejected(): void
     {
         $response = $this->actingAs($this->userA)->post('/cycle/start', [
-            'bibit_rak' => [-500, 600, 700],
+            'maggot_rak' => [-500, 600, 700],
+            'pakan_rak'  => [100, 100, 100],
         ]);
 
-        $response->assertSessionHasErrors(['bibit_rak.0']);
+        $response->assertSessionHasErrors(['maggot_rak.0']);
     }
 
     #[Test]
     public function cycle_start_all_null_rejected(): void
     {
         $response = $this->actingAs($this->userA)->post('/cycle/start', [
-            'bibit_rak' => [null, null, null, null, null, null],
+            'maggot_rak' => [null, null, null, null, null, null],
+            'pakan_rak'  => [null, null, null, null, null, null],
         ]);
 
         $response->assertRedirect();

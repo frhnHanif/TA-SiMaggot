@@ -88,7 +88,7 @@
                 <th>Waktu</th>
                 <th>Biopond 1-6 (gram)</th>
                 <th>Panen (gram)</th>
-                <th>Suhu (°C)</th>
+                <th>Suhu (&deg;C)</th>
                 <th>Kelembaban Udara (%)</th>
                 <th>Kelembaban Tanah (%)</th>
                 <th>Amonia (ppm)</th>

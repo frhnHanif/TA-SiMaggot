@@ -42,7 +42,7 @@ class CycleController extends Controller
                 foreach ($perDayLogs as $date => $logs) {
                     $dailyAvgTemp = $logs->avg('temp');
                     
-                    // 15°C adalah Batas Suhu Dasar (Base Temperature) Biologis Maggot BSF
+                    // 15&deg;C adalah Batas Suhu Dasar (Base Temperature) Biologis Maggot BSF
                     if ($dailyAvgTemp > 15) { 
                         $accumulatedADD += ($dailyAvgTemp - 15);
                     }

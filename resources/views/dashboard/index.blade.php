@@ -16,7 +16,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Suhu Udara</p>
-                    <p class="text-2xl font-black text-gray-800">{{ $latestData->temp }} <span class="text-sm font-medium text-gray-500">&deg;C</span></p>
+                    <p class="text-2xl font-black text-gray-800">{{ number_format($latestData->temp, 2, ',', '.') }} <span class="text-sm font-medium text-gray-500">&deg;C</span></p>
                 </div>
             </div>
 
@@ -27,7 +27,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">Kelembaban</p>
-                    <p class="text-2xl font-black text-gray-800">{{ $latestData->hum }} <span class="text-sm font-medium text-gray-500">%</span></p>
+                    <p class="text-2xl font-black text-gray-800">{{ number_format($latestData->hum, 2, ',', '.') }} <span class="text-sm font-medium text-gray-500">%</span></p>
                 </div>
             </div>
 
@@ -68,7 +68,7 @@
                         $biopondArray = is_array($latestData->biopond) ? $latestData->biopond : json_decode($latestData->biopond, true) ?? [];
                         $totalBerat = array_sum($biopondArray);
                     @endphp
-                    <p class="text-2xl font-black text-gray-800">{{ number_format($totalBerat / 1000, 2) }} <span class="text-sm font-medium text-gray-500">kg</span></p>
+                    <p class="text-2xl font-black text-gray-800">{{ number_format($totalBerat / 1000, 2, ',', '.') }} <span class="text-sm font-medium text-gray-500">kg</span></p>
                 </div>
             </div>
         </div>
@@ -220,7 +220,7 @@
                 <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all">
                     <div>
                         <p class="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">Total Akumulasi Panen</p>
-                        <h3 class="text-3xl font-black">{{ number_format($totalHarvest, 2) }} <span class="text-lg font-medium">kg</span></h3>
+                        <h3 class="text-3xl font-black">{{ number_format($totalHarvest, 2, ',', '.') }} <span class="text-lg font-medium">kg</span></h3>
                     </div>
                     <i class="fa-solid fa-box-open text-5xl opacity-30"></i>
                 </div>
@@ -228,7 +228,7 @@
                 <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-75">
                     <div>
                         <p class="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Rata-rata Waste Reduction (WRI)</p>
-                        <h3 class="text-3xl font-black">{{ number_format($avgWri, 1) }} <span class="text-lg font-medium">%/hari</span></h3>
+                        <h3 class="text-3xl font-black">{{ number_format($avgWri, 1, ',', '.') }} <span class="text-lg font-medium">%/hari</span></h3>
                     </div>
                     <i class="fa-solid fa-recycle text-5xl opacity-30"></i>
                 </div>
@@ -236,7 +236,7 @@
                 <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between group-hover:-translate-y-1 group-hover:shadow-lg transition-all delay-150">
                     <div>
                         <p class="text-purple-100 text-xs font-bold uppercase tracking-wider mb-1">Efisiensi Biokonversi (ECI)</p>
-                        <h3 class="text-3xl font-black">{{ number_format($avgEci, 1) }} <span class="text-lg font-medium">%</span></h3>
+                        <h3 class="text-3xl font-black">{{ number_format($avgEci, 1, ',', '.') }} <span class="text-lg font-medium">%</span></h3>
                     </div>
                     <i class="fa-solid fa-bug text-5xl opacity-30"></i>
                 </div>
@@ -281,16 +281,16 @@
                                         {{ $log->created_at->format('H:i') }}
                                         <span class="text-xs text-gray-400 ml-1">{{ $log->created_at->format('d/m') }}</span>
                                     </td>
-                                    <td class="py-3 text-gray-600">{{ $log->temp }} &deg;C</td>  {{-- DIPERBAIKI --}}
-                                    <td class="py-3 text-gray-600">{{ $log->hum }} %</td>
-                                    <td class="py-3 text-gray-600">{{ number_format($avgSoil, 1) }} %</td>
+                                    <td class="py-3 text-gray-600">{{ number_format($log->temp, 2, ',', '.') }} &deg;C</td>
+                                    <td class="py-3 text-gray-600">{{ number_format($log->hum, 2, ',', '.') }} %</td>
+                                    <td class="py-3 text-gray-600">{{ number_format($avgSoil, 1, ',', '.') }} %</td>
                                     <td class="py-3">
                                         <span class="px-2 py-1 text-[10px] font-bold rounded-md {{ $log->ammonia > 30 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
                                             {{ $log->ammonia }} ppm
                                         </span>
                                     </td>
                                     <td class="py-3 text-right pr-2 font-bold text-gray-700">
-                                        {{ number_format($totalBerat, 2) }} kg
+                                        {{ number_format($totalBerat, 2, ',', '.') }} kg
                                     </td>
                                 </tr>
                             @empty

@@ -8,7 +8,7 @@
         <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
                 <p class="text-green-100 text-sm font-bold uppercase tracking-wider mb-1">Total Akumulasi Panen</p>
-                <h3 class="text-3xl font-black">{{ number_format($totalHarvest, 2) }} <span class="text-lg font-medium">kg</span></h3>
+                <h3 class="text-3xl font-black">{{ number_format($totalHarvest, 2, ',', '.') }} <span class="text-lg font-medium">kg</span></h3>
             </div>
             <i class="fa-solid fa-box-open text-5xl opacity-30"></i>
         </div>
@@ -16,7 +16,7 @@
         <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
                 <p class="text-blue-100 text-sm font-bold uppercase tracking-wider mb-1">Rata-rata Waste Reduction (WRI)</p>
-                <h3 class="text-3xl font-black">{{ number_format($avgWri, 1) }} <span class="text-lg font-medium">%/hari</span></h3>
+                <h3 class="text-3xl font-black">{{ number_format($avgWri, 1, ',', '.') }} <span class="text-lg font-medium">%/hari</span></h3>
             </div>
             <i class="fa-solid fa-recycle text-5xl opacity-30"></i>
         </div>
@@ -24,7 +24,7 @@
         <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-[1.5rem] shadow-sm p-6 text-white flex items-center justify-between hover:shadow-md transition-shadow">
             <div>
                 <p class="text-purple-100 text-sm font-bold uppercase tracking-wider mb-1">Efisiensi Biokonversi (ECI)</p>
-                <h3 class="text-3xl font-black">{{ number_format($avgEci, 1) }} <span class="text-lg font-medium">%</span></h3>
+                <h3 class="text-3xl font-black">{{ number_format($avgEci, 1, ',', '.') }} <span class="text-lg font-medium">%</span></h3>
             </div>
             <i class="fa-solid fa-bug text-5xl opacity-30"></i>
         </div>
@@ -124,13 +124,13 @@
         chartTempHum = new ApexCharts(document.querySelector("#chartTempHum"), {
             ...commonOptions,
             series: [
-                { name: 'Suhu (°C)', type: 'line', data: tempData },
+                { name: 'Suhu (&deg;C)', type: 'line', data: tempData },
                 { name: 'Kelembaban (%)', type: 'line', data: humData }
             ],
             chart: { height: 300, type: 'line', toolbar: { show: false } },
             colors: ['#f97316', '#3b82f6'],
             yaxis: [
-                { title: { text: 'Suhu (°C)', style: { color: '#f97316', fontSize: '10px' } }, labels: { style: { colors: '#f97316' } } },
+                { title: { text: 'Suhu (&deg;C)', style: { color: '#f97316', fontSize: '10px' } }, labels: { style: { colors: '#f97316' } } },
                 { opposite: true, title: { text: 'Kelembaban (%)', style: { color: '#3b82f6', fontSize: '10px' } }, labels: { style: { colors: '#3b82f6' } } }
             ],
             legend: { position: 'top' }
@@ -205,7 +205,7 @@
                 // Update Grafik Suhu Hum
                 chartTempHum.updateOptions({ xaxis: { categories: data.timestamps } });
                 chartTempHum.updateSeries([
-                    { name: 'Suhu (°C)', data: data.tempData },
+                    { name: 'Suhu (&deg;C)', data: data.tempData },
                     { name: 'Kelembaban (%)', data: data.humData }
                 ]);
 

@@ -474,7 +474,7 @@ class SensorDataController extends Controller
                     'id' => 'temp_danger_' . $latestData->id,
                     'type' => 'danger',
                     'title' => 'Bahaya Suhu Kritis!',
-                    'message' => "Suhu mencapai {$latestData->temp}°C (Batas fatal >35°C). Segera nyalakan kipas exhaust secara penuh!",
+                    'message' => "Suhu mencapai {$latestData->temp}&deg;C (Batas fatal >35&deg;C). Segera nyalakan kipas exhaust secara penuh!",
                     'time' => $timeStr
                 ];
             } elseif ($latestData->temp > config('maggot.thresholds.temp.max_ideal')) {
@@ -482,7 +482,7 @@ class SensorDataController extends Controller
                     'id' => 'temp_warn_high_' . $latestData->id,
                     'type' => 'warning',
                     'title' => 'Peringatan Suhu Tinggi',
-                    'message' => "Suhu saat ini {$latestData->temp}°C (Ideal 24-30°C). Masih stabil namun pantau ventilasi udara.",
+                    'message' => "Suhu saat ini {$latestData->temp}&deg;C (Ideal 24-30&deg;C). Masih stabil namun pantau ventilasi udara.",
                     'time' => $timeStr
                 ];
             } elseif ($latestData->temp < config('maggot.thresholds.temp.min_ideal')) {
@@ -490,7 +490,7 @@ class SensorDataController extends Controller
                     'id' => 'temp_warn_low_' . $latestData->id,
                     'type' => 'warning',
                     'title' => 'Suhu Terlalu Rendah',
-                    'message' => "Suhu udara turun ke {$latestData->temp}°C. Aktivitas dan metabolisme larva berpotensi menurun.",
+                    'message' => "Suhu udara turun ke {$latestData->temp}&deg;C. Aktivitas dan metabolisme larva berpotensi menurun.",
                     'time' => $timeStr
                 ];
             }
