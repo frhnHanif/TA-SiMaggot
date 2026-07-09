@@ -105,7 +105,7 @@
                 </div>
                 <div>
                     <h3 class="font-bold text-gray-800">Kipas Exhaust</h3>
-                    <p class="text-xs text-gray-500">Kendalikan kecepatan putaran motor (Sinyal PWM)</p>
+                    <p class="text-xs text-gray-500">Kendalikan kecepatan putaran motor</p>
                 </div>
             </div>
 
@@ -154,7 +154,7 @@
                     </button>
                 @endforeach
             </div>
-            <p class="text-[10px] text-center text-gray-400 mt-4">*Sistem mengonversi tingkatan ke format data PWM dinamis (0-255) untuk register mikroprosesor ESP32.</p>
+            <!-- <p class="text-[10px] text-center text-gray-400 mt-4">*Sistem mengonversi tingkatan ke format data PWM dinamis (0-255) untuk register mikroprosesor ESP32.</p> -->
         </div>
 
         <div class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 flex flex-col">

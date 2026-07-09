@@ -98,12 +98,12 @@
                     <button @click="viewMode = 'table'" 
                             :class="viewMode === 'table' ? 'bg-white shadow-sm text-gray-800 font-bold' : 'text-gray-400 hover:text-gray-600 font-medium'"
                             class="px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5">
-                        <i class="fa-solid fa-table-list text-[10px]"></i> Tabel
+                        <i class="fa-solid fa-table-list text-[12px]"></i> Tabel
                     </button>
                     <button @click="viewMode = 'card'"
                             :class="viewMode === 'card' ? 'bg-white shadow-sm text-gray-800 font-bold' : 'text-gray-400 hover:text-gray-600 font-medium'"
                             class="px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5">
-                        <i class="fa-solid fa-grid-2 text-[10px]"></i> Kartu
+                        <i class="fa-solid fa-rectangle-list text-[12px]"></i> Kartu
                     </button>
                 </div>
 
@@ -183,16 +183,24 @@
                                             $c = $colors[$i + 1];
                                             $mass = $biopondArray[$i] ?? 0;
                                             $soil = $soilArray[$i] ?? null;
+                                            $soilDisplay = isset($soil) ? rtrim(rtrim(number_format((float)$soil, 2, ',', '.'), '0'), ',') : null;
+                                            if ($mass >= 1000) {
+                                                $massDisplay = number_format($mass / 1000, 2, ',', '.');
+                                                $massUnit = 'kg';
+                                            } else {
+                                                $massDisplay = number_format(round($mass), 0, ',', '.');
+                                                $massUnit = 'g';
+                                            }
                                         @endphp
                                         <div class="bg-white rounded-lg p-2 border {{ $c[1] }} flex flex-col">
                                             <span class="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-0.5">Rak {{ $i + 1 }}</span>
-                                            <span class="text-sm font-black text-gray-800">{{ number_format(round($mass), 0, ',', '.') }}<span class="text-[9px] font-medium text-gray-400 ml-0.5">g</span></span>
+                                            <span class="text-sm font-black text-gray-800">{{ $massDisplay }}<span class="text-[9px] font-medium text-gray-400 ml-0.5">{{ $massUnit }}</span></span>
                                             @if (isset($soil))
                                                 <div class="flex items-center gap-1 mt-0.5">
                                                     <div class="flex-1 bg-gray-200 rounded-full h-1 overflow-hidden">
                                                         <div class="{{ $c[3] }} h-1 rounded-full" style="width: {{ $soil }}%"></div>
                                                     </div>
-                                                    <span class="text-[9px] font-bold text-gray-500 w-7 text-right">{{ $soil }}%</span>
+                                                    <span class="text-[9px] font-bold text-gray-500 w-7 text-right">{{ $soilDisplay }}%</span>
                                                 </div>
                                             @else
                                                 <span class="text-[9px] text-gray-300 mt-0.5">--</span>
@@ -275,16 +283,24 @@
                                 $c = $colors[$i + 1];
                                 $mass = $biopondArray[$i] ?? 0;
                                 $soil = $soilArray[$i] ?? null;
+                                $soilDisplay = isset($soil) ? rtrim(rtrim(number_format((float)$soil, 2, ',', '.'), '0'), ',') : null;
+                                if ($mass >= 1000) {
+                                    $massDisplay = number_format($mass / 1000, 2, ',', '.');
+                                    $massUnit = 'kg';
+                                } else {
+                                    $massDisplay = number_format(round($mass), 0, ',', '.');
+                                    $massUnit = 'g';
+                                }
                             @endphp
                             <div class="bg-white rounded-lg p-1.5 border {{ $c[1] }} flex flex-col">
                                 <span class="text-[8px] font-black text-gray-500 uppercase tracking-wider mb-0.5">Rak {{ $i + 1 }}</span>
-                                <span class="text-xs font-black text-gray-800">{{ number_format(round($mass), 0, ',', '.') }}<span class="text-[8px] text-gray-400 ml-0.5">g</span></span>
+                                <span class="text-xs font-black text-gray-800">{{ $massDisplay }}<span class="text-[8px] text-gray-400 ml-0.5">{{ $massUnit }}</span></span>
                                 @if (isset($soil))
                                     <div class="flex items-center gap-1 mt-0.5">
                                         <div class="flex-1 bg-gray-200 rounded-full h-1 overflow-hidden">
                                             <div class="{{ $c[3] }} h-1 rounded-full" style="width: {{ $soil }}%"></div>
                                         </div>
-                                        <span class="text-[8px] font-bold text-gray-500 w-6 text-right">{{ $soil }}%</span>
+                                        <span class="text-[8px] font-bold text-gray-500 w-6 text-right">{{ $soilDisplay }}%</span>
                                     </div>
                                 @endif
                             </div>

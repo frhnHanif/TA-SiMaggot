@@ -135,7 +135,7 @@
                         <div>
                             <h3 class="text-lg font-bold text-gray-800">Siklus Aktif: {{ $activeCycle->batch_id }}</h3>
                             <p class="text-xs text-gray-400 mt-1 font-bold flex items-center gap-1">
-                                <i class="fa-solid fa-lock text-[10px]"></i> Live Progress (Hanya Pantau)
+                                <i class="fa-solid fa-lock text-[10px]"></i> Live Progress 
                             </p>
                         </div>
                     </div>
@@ -180,6 +180,17 @@
             
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                 @foreach($biopondArray as $index => $berat)
+                    @php
+                        $soilVal = $soilArray[$index] ?? null;
+                        $soilDisplay = isset($soilVal) ? rtrim(rtrim(number_format((float)$soilVal, 2, ',', '.'), '0'), ',') : '--';
+                        if ($berat >= 1000) {
+                            $massDisplay = number_format($berat / 1000, 2, ',', '.');
+                            $massUnit = 'kg';
+                        } else {
+                            $massDisplay = number_format(round($berat), 0, ',', '.');
+                            $massUnit = 'g';
+                        }
+                    @endphp
                     <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 hover:border-amber-400 transition-colors group">
                         <div class="flex justify-between items-center mb-3">
                             <span class="text-xs font-black text-gray-800 uppercase tracking-wider">Rak {{ $index + 1 }}</span>
@@ -190,8 +201,8 @@
                         <div class="mb-3">
                             <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Massa Maggot</span>
                             <div class="flex items-baseline gap-1">
-                                <span class="text-xl font-black text-gray-800">{{ number_format(round($berat), 0, ',', '.') }}</span>
-                                <span class="text-xs text-gray-500 font-medium">g</span>
+                                <span class="text-xl font-black text-gray-800">{{ $massDisplay }}</span>
+                                <span class="text-xs text-gray-500 font-medium">{{ $massUnit }}</span>
                             </div>
                         </div>
 
@@ -200,7 +211,7 @@
                             <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Kelembaban Tanah</span>
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-seedling text-amber-500 text-xs"></i>
-                                <span class="text-sm font-bold text-gray-700">{{ $soilArray[$index] ?? '--' }} %</span>
+                                <span class="text-sm font-bold text-gray-700">{{ $soilDisplay }} %</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-1 mt-1.5 overflow-hidden">
                                 <div class="bg-gradient-to-r from-amber-400 to-amber-500 h-1 rounded-full" style="width: {{ $soilArray[$index] ?? 0 }}%"></div>

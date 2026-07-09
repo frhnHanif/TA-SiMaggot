@@ -62,7 +62,7 @@
                         <h4 class="text-sm font-bold text-amber-900 flex items-center gap-2">
                             Prediksi Waktu Panen
                         </h4>
-                        <p class="text-xs text-amber-700/80 mt-0.5">*Perhitungan otomatis berdasarkan model Accumulated Degree Days (ADD)</p>
+                        <p class="text-xs text-amber-700/80 mt-0.5">Perhitungan berdasarkan model Accumulated Degree Days (ADD)</p>
                     </div>
                     <div class="text-left md:text-right">
                         @if($estimatedRemainingDays === 0)
