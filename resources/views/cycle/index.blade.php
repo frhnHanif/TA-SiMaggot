@@ -175,7 +175,7 @@
                     <p class="text-sm text-gray-600 mb-4">Isi <strong>salah satu</strong> massa yang diketahui per rak (maggot atau pakan), lalu tarik data dari load cell. Massa lainnya akan dihitung otomatis.</p>
                     
                     <button type="button" onclick="tarikDataMulai()" id="btnTarikMulai" class="mb-4 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-bold py-2 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
-                        <i class="fa-solid fa-satellite-dish"></i> <span>Tarik Data dari Load Cell</span>
+                        <i class="fa-solid fa-satellite-dish"></i> <span>Ambil Data Timbangan</span>
                     </button>
 
                     <div class="space-y-2.5">
@@ -223,7 +223,7 @@
                 @csrf
 
                 <button type="button" onclick="tarikDataSensor('pakan')" id="btnTarikPakan" class="mb-4 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 font-bold py-2 px-4 rounded-lg text-xs flex items-center justify-center gap-2 transition-colors">
-                    <i class="fa-solid fa-satellite-dish"></i> <span>Hitung Otomatis (Tarik Delta dari Load Cell)</span>
+                    <i class="fa-solid fa-satellite-dish"></i> <span>Ambil Data Timbangan</span>
                 </button>
 
                 <div class="grid grid-cols-2 gap-4 mb-4">
@@ -316,7 +316,7 @@
         let modal = document.getElementById('modalMulai');
         let originalHtml = btn.innerHTML;
         
-        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Menunggu ESP32 (Maks 1 menit)...</span>`;
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> <span>Menunggu data timbangan (Maks 1 menit)...</span>`;
         btn.disabled = true;
 
         // 1. Ambil data Baseline
@@ -377,7 +377,7 @@
                 setTimeout(() => {
                     clearInterval(pollInterval);
                     if (btn.disabled) {
-                        btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500"></i> <span class="text-red-500">Gagal! ESP32 Offline</span>`;
+                        btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500"></i> <span class="text-red-500">Gagal! Perangkat tidak merespon</span>`;
                         setTimeout(() => { btn.innerHTML = originalHtml; btn.disabled = false; }, 3000);
                     }
                 }, 60000);
