@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\SensorData;
 use App\Models\DeviceControl;
 use App\Models\Cycle;
+use App\Exports\SensorDataExport;
 
 class SensorDataController extends Controller
 {
@@ -121,53 +122,14 @@ class SensorDataController extends Controller
             $query->latest();
         }
 
-        // 3. Logika Export ke Excel (CSV)
+        // 3. Logika Export ke Excel (format .xlsx rapi)
         if ($request->query('export') === 'excel') {
-            // Ambil semua data yang sudah difilter tanpa Pagination
             $dataExport = $query->get();
-            
-            $filename = "Laporan_SiMaggot_" . date('Ymd_His') . ".csv";
-            $headers = [
-                "Content-type"        => "text/csv",
-                "Content-Disposition" => "attachment; filename=$filename",
-                "Pragma"              => "no-cache",
-                "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-                "Expires"             => "0"
-            ];
-            
-            // Kolom Header Excel — LENGKAP per biopond 1-6
-            $columns = [
-                'Tanggal', 'Waktu', 'Suhu (C)', 'Kelembaban Udara (%)',
-                'Hum Tanah R1 (%)', 'Hum Tanah R2 (%)', 'Hum Tanah R3 (%)', 'Hum Tanah R4 (%)', 'Hum Tanah R5 (%)', 'Hum Tanah R6 (%)',
-                'Massa R1 (g)', 'Massa R2 (g)', 'Massa R3 (g)', 'Massa R4 (g)', 'Massa R5 (g)', 'Massa R6 (g)',
-                'Amonia (ppm)', 'Total Massa Maggot (kg)'
-            ];
-            
-            $callback = function() use($dataExport, $columns) {
-                $file = fopen('php://output', 'w');
-                fputcsv($file, $columns);
-                
-                foreach ($dataExport as $row) {
-                    $biopondArray = is_array($row->biopond) ? $row->biopond : json_decode($row->biopond, true) ?? [];
-                    $totalBerat = array_sum($biopondArray) / 1000;
-                    
-                    $soilArray = is_array($row->soil) ? $row->soil : json_decode($row->soil, true) ?? [];
-                    
-                    fputcsv($file, [
-                        $row->created_at->format('d/m/Y'),
-                        $row->created_at->format('H:i:s'),
-                        $row->temp,
-                        $row->hum,
-                        $soilArray[0] ?? '', $soilArray[1] ?? '', $soilArray[2] ?? '', $soilArray[3] ?? '', $soilArray[4] ?? '', $soilArray[5] ?? '',
-                        $biopondArray[0] ?? '', $biopondArray[1] ?? '', $biopondArray[2] ?? '', $biopondArray[3] ?? '', $biopondArray[4] ?? '', $biopondArray[5] ?? '',
-                        $row->ammonia,
-                        number_format($totalBerat, 2, '.', '')
-                    ]);
-                }
-                fclose($file);
-            };
-            
-            return response()->stream($callback, 200, $headers);
+            return (new SensorDataExport(
+                $dataExport,
+                $request->query('start_date'),
+                $request->query('end_date')
+            ))->download();
         }
 
         // 4. Tampilkan halaman web seperti biasa (dengan pagination)
