@@ -30,7 +30,12 @@ class SensorDataExport
      */
     public function download(): StreamedResponse
     {
+        set_time_limit(120);
+
         $spreadsheet = new Spreadsheet();
+        // Nonaktifkan pre-kalkulasi formula untuk hemat memori
+        \PhpOffice\PhpSpreadsheet\Calculation\Calculation::getInstance($spreadsheet)
+            ->setCalculationCacheEnabled(false);
         $sheet = $spreadsheet->getActiveSheet();
 
         // ─── SETUP KOLOM ───────────────────────────────────────────
@@ -141,91 +146,119 @@ class SensorDataExport
         $sheet->getRowDimension($headerRow)->setRowHeight(32);
 
         // ═══════════════════════════════════════════════════════════
-        // ISI DATA
+        // ISI DATA — tulis semua data dulu, lalu styling per range
         // ═══════════════════════════════════════════════════════════
         $row = $headerRow + 1;
         $ammoniaThreshold = config('maggot.thresholds.ammonia.max_safe', 20);
 
-        foreach ($this->data as $index => $record) {
-            $biopondArray = is_array($record->biopond)
-                ? $record->biopond
-                : json_decode($record->biopond, true) ?? [];
-            $soilArray = is_array($record->soil)
-                ? $record->soil
-                : json_decode($record->soil, true) ?? [];
-            $totalBerat = array_sum($biopondArray) / 1000;
+        $chunks = array_chunk(iterator_to_array($this->data), 2000);
+        foreach ($chunks as $chunk) {
+            foreach ($chunk as $index => $record) {
+                $biopondArray = is_array($record->biopond)
+                    ? $record->biopond
+                    : json_decode($record->biopond, true) ?? [];
+                $soilArray = is_array($record->soil)
+                    ? $record->soil
+                    : json_decode($record->soil, true) ?? [];
+                $totalBerat = array_sum($biopondArray) / 1000;
 
-            // Tulis data per kolom
-            $sheet->setCellValue("A{$row}", $record->created_at->format('d/m/Y'));
-            $sheet->setCellValue("B{$row}", $record->created_at->format('H:i:s'));
-            $sheet->setCellValue("C{$row}", (float) $record->temp);
-            $sheet->setCellValue("D{$row}", (float) $record->hum);
+                // Tulis data per kolom (tanpa styling berat)
+                $sheet->setCellValue("A{$row}", $record->created_at->format('d/m/Y'));
+                $sheet->setCellValue("B{$row}", $record->created_at->format('H:i:s'));
+                $sheet->setCellValue("C{$row}", (float) $record->temp);
+                $sheet->setCellValue("D{$row}", (float) $record->hum);
 
-            // Hum Tanah per rak (E..J)
-            for ($i = 0; $i < 6; $i++) {
-                $colLetter = chr(69 + $i); // E=69 .. J=74
-                $val = $soilArray[$i] ?? null;
-                $sheet->setCellValue("{$colLetter}{$row}", $val !== null ? (float) $val : null);
+                // Hum Tanah per rak (E..J)
+                for ($i = 0; $i < 6; $i++) {
+                    $colLetter = chr(69 + $i);
+                    $val = $soilArray[$i] ?? null;
+                    $sheet->setCellValue("{$colLetter}{$row}", $val !== null ? (float) $val : null);
+                }
+
+                // Massa per rak (K..P)
+                for ($i = 0; $i < 6; $i++) {
+                    $colLetter = chr(75 + $i);
+                    $val = $biopondArray[$i] ?? null;
+                    $sheet->setCellValue("{$colLetter}{$row}", $val !== null ? (float) $val : null);
+                }
+
+                // Amonia
+                $sheet->setCellValue("Q{$row}", (float) $record->ammonia);
+
+                // Total Massa
+                $sheet->setCellValue("R{$row}", round($totalBerat, 2));
+
+                $row++;
             }
-
-            // Massa per rak (K..P)
-            for ($i = 0; $i < 6; $i++) {
-                $colLetter = chr(75 + $i); // K=75 .. P=80
-                $val = $biopondArray[$i] ?? null;
-                $sheet->setCellValue("{$colLetter}{$row}", $val !== null ? (float) $val : null);
+            // Bersihkan memori setelah tiap chunk
+            unset($chunk);
+            if (function_exists('gc_collect_cycles')) {
+                gc_collect_cycles();
             }
+        }
 
-            // Amonia
-            $sheet->setCellValue("Q{$row}", (float) $record->ammonia);
+        $dataStartRow = $headerRow + 1;
+        $dataEndRow   = $row - 1;
 
-            // Total Massa
-            $sheet->setCellValue("R{$row}", round($totalBerat, 2));
-
-            // ── STYLING BARIS DATA ─────────────────────────────
-            $dataRowStyle = $sheet->getStyle("A{$row}:{$lastCol}{$row}");
-
-            // Warna latar selang-seling (zebra striping)
-            $bgColor = ($index % 2 === 0) ? 'FFFFFF' : 'F9FAFB'; // white / gray-50
-            $dataRowStyle->applyFromArray([
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => $bgColor],
-                ],
+        // ── STYLING RANGE: Terapkan ke seluruh data sekaligus ──
+        if ($dataEndRow >= $dataStartRow) {
+            $dataRange = "A{$dataStartRow}:{$lastCol}{$dataEndRow}";
+            $sheet->getStyle($dataRange)->applyFromArray([
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => 'E5E7EB'], // gray-200
+                        'color' => ['rgb' => 'E5E7EB'],
                     ],
                 ],
                 'font' => [
                     'size' => 10,
                     'name' => 'Calibri',
-                    'color' => ['rgb' => '374151'], // gray-700
+                    'color' => ['rgb' => '374151'],
                 ],
             ]);
 
-            // Alignment per kolom
-            $sheet->getStyle("A{$row}:B{$row}")->getAlignment()
+            // Alignment: A-B center, C-R center
+            $sheet->getStyle("A{$dataStartRow}:B{$dataEndRow}")->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle("C{$row}:{$lastCol}{$row}")->getAlignment()
+            $sheet->getStyle("C{$dataStartRow}:{$lastCol}{$dataEndRow}")->getAlignment()
                 ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-            // Conditional: Amonia MERAH jika > threshold
-            if ((float) $record->ammonia > $ammoniaThreshold) {
-                $sheet->getStyle("Q{$row}")->applyFromArray([
-                    'font' => [
-                        'bold' => true,
-                        'color' => ['rgb' => 'DC2626'], // red-600
-                    ],
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => 'FEE2E2'], // red-100
-                    ],
-                ]);
+            // Zebra striping per 2 baris (lebih hemat: gunakan conditional formatting)
+            for ($r = $dataStartRow; $r <= $dataEndRow; $r += 2) {
+                $bgRow = ($r - $dataStartRow) % 2 === 0;
+                if (!$bgRow) {
+                    $sheet->getStyle("A{$r}:{$lastCol}{$r}")->getFill()
+                        ->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()->setRGB('F9FAFB');
+                }
             }
 
-            $sheet->getRowDimension($row)->setRowHeight(22);
-            $row++;
+            // Conditional: Amonia MERAH jika > threshold
+            $redRows = [];
+            $globalIndex = 0;
+            foreach ($this->data as $record) {
+                $currentRow = $dataStartRow + $globalIndex;
+                if ((float) $record->ammonia > $ammoniaThreshold) {
+                    $sheet->getStyle("Q{$currentRow}")->applyFromArray([
+                        'font' => [
+                            'bold' => true,
+                            'color' => ['rgb' => 'DC2626'],
+                        ],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => 'FEE2E2'],
+                        ],
+                    ]);
+                }
+                $globalIndex++;
+            }
+        }
+
+        // Tinggi baris data (set per range, bukan per baris)
+        if ($dataEndRow >= $dataStartRow) {
+            for ($r = $dataStartRow; $r <= $dataEndRow; $r++) {
+                $sheet->getRowDimension($r)->setRowHeight(22);
+            }
         }
 
         // ═══════════════════════════════════════════════════════════

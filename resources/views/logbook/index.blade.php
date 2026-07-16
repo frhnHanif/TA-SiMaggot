@@ -3,9 +3,9 @@
 @section('title', 'Riwayat Telemetri')
 
 @section('content')
-    <!-- ========================================== -->
-    <!-- PANEL FILTER LAPORAN (collapsible)          -->
-    <!-- ========================================== -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/light.min.css">
+
+<!-- PANEL FILTER LAPORAN (collapsible) -->
     <div class="mb-6" x-data="{ filterOpen: {{ request()->has('start_date') || request()->has('end_date') ? 'true' : 'false' }} }">
         <!-- Tombol Toggle Filter -->
         <button @click="filterOpen = !filterOpen"
@@ -28,6 +28,17 @@
 
         <!-- Isi Filter -->
         <div x-show="filterOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-6 mt-3">
+            
+            {{-- Peringatan Export Maks 30 Hari --}}
+            @if(session('error'))
+                <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center gap-2 font-medium">
+                    <i class="fa-solid fa-triangle-exclamation"></i> {{ session('error') }}
+                </div>
+            @endif
+            <div class="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-xl flex items-center gap-2">
+                <i class="fa-solid fa-circle-info"></i> Export Excel dibatasi <strong>maksimal 30 hari</strong> untuk menjaga performa.
+            </div>
+
             <form action="{{ url('/logbook') }}" method="GET" class="flex flex-col md:flex-row items-end gap-4">
                 
                 <!-- Tanggal Mulai -->
@@ -37,7 +48,10 @@
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                             <i class="fa-regular fa-calendar"></i>
                         </div>
-                        <input type="date" name="start_date" value="{{ request('start_date') }}" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-teal-500 focus:border-teal-500 block w-full pl-10 p-2.5 outline-none transition-colors">
+                        <input type="text" id="start_date" name="start_date" 
+                               value="{{ request('start_date') }}" 
+                               placeholder="dd/mm/yyyy"
+                               class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-teal-500 focus:border-teal-500 block w-full pl-10 p-2.5 outline-none transition-colors datepicker">
                     </div>
                 </div>
 
@@ -48,7 +62,10 @@
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                             <i class="fa-regular fa-calendar"></i>
                         </div>
-                        <input type="date" name="end_date" value="{{ request('end_date') }}" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-teal-500 focus:border-teal-500 block w-full pl-10 p-2.5 outline-none transition-colors">
+                        <input type="text" id="end_date" name="end_date" 
+                               value="{{ request('end_date') }}" 
+                               placeholder="dd/mm/yyyy"
+                               class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-teal-500 focus:border-teal-500 block w-full pl-10 p-2.5 outline-none transition-colors datepicker">
                     </div>
                 </div>
 
@@ -325,3 +342,21 @@
         
     </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr.localize(flatpickr.l10ns.id);
+        flatpickr('.datepicker', {
+            dateFormat: 'Y-m-d',       // format yang dikirim ke server
+            altInput: true,
+            altFormat: 'd/m/Y',        // format tampilan ke user (dd/mm/yyyy)
+            defaultDate: null,
+            allowInput: false,
+            maxDate: 'today',
+        });
+    });
+</script>
+@endpush

@@ -122,13 +122,44 @@ class SensorDataController extends Controller
             $query->latest();
         }
 
-        // 3. Logika Export ke Excel (format .xlsx rapi)
+        // 3. Logika Export ke Excel (format .xlsx rapi) — maks 30 hari
         if ($request->query('export') === 'excel') {
+            $startDate = $request->query('start_date');
+            $endDate   = $request->query('end_date');
+
+            // Jika tidak ada filter, default ke 30 hari terakhir
+            if (!$startDate && !$endDate) {
+                $endDate   = now()->format('Y-m-d');
+                $startDate = now()->subDays(29)->format('Y-m-d');
+            } elseif ($startDate && $endDate) {
+                $diffDays = \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate));
+                if ($diffDays > 30) {
+                    return back()->with('error', '⚠️ Export Excel dibatasi maksimal 30 hari. Silakan persempit rentang tanggal.');
+                }
+            } elseif ($startDate && !$endDate) {
+                // Hanya start_date: batasi sampai start_date + 30 hari atau hari ini
+                $endDate = now()->format('Y-m-d');
+                $diffDays = \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate));
+                if ($diffDays > 30) {
+                    return back()->with('error', '⚠️ Export Excel dibatasi maksimal 30 hari. Silakan tentukan tanggal akhir yang lebih dekat.');
+                }
+            } elseif (!$startDate && $endDate) {
+                $startDate = \Carbon\Carbon::parse($endDate)->subDays(29)->format('Y-m-d');
+            }
+
+            // Terapkan filter tanggal ke query
+            if ($startDate) {
+                $query->whereDate('created_at', '>=', $startDate);
+            }
+            if ($endDate) {
+                $query->whereDate('created_at', '<=', $endDate);
+            }
+
             $dataExport = $query->get();
             return (new SensorDataExport(
                 $dataExport,
-                $request->query('start_date'),
-                $request->query('end_date')
+                $startDate,
+                $endDate
             ))->download();
         }
 
