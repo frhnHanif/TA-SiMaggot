@@ -20,11 +20,13 @@ class DatabaseSeeder extends Seeder
     {
         // --- Playwright Black Box Test User ---
         // Credentials: test@si-maggot.id / Test1234!
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@si-maggot.id',
-            'password' => Hash::make('Test1234!'),
-        ]);
+        if (!User::where('email', 'test@si-maggot.id')->exists()) {
+            User::factory()->create([
+                'name' => 'Test User',
+                'email' => 'test@si-maggot.id',
+                'password' => Hash::make('Test1234!'),
+            ]);
+        }
 
         // --- Super Admin (jika belum ada) ---
         if (!User::where('email', 'admin@si-maggot.id')->exists()) {
@@ -48,5 +50,8 @@ class DatabaseSeeder extends Seeder
                 'last_ping_at' => now(),
             ]);
         }
+
+        // --- Dummy Data: Sensor & Siklus ---
+        $this->call(DummyDataSeeder::class);
     }
 }

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SensorDataController;
 use App\Http\Controllers\CycleController;
+use App\Http\Controllers\ReportController;
 use App\Http\Middleware\CheckIotApiKey;
 // Tambahkan untuk manajemen akun
 use App\Models\User;
@@ -14,6 +15,9 @@ Route::get('/', [SensorDataController::class, 'index'])->name('dashboard');
 Route::redirect('/dashboard', '/');
 Route::get('/statistik', [SensorDataController::class, 'statistik']);
 Route::get('/logbook', [SensorDataController::class, 'logbook']);
+// Laporan & Ekspor PDF
+Route::get('/report', [ReportController::class, 'index'])->name('report.index');
+Route::post('/report/generate', [ReportController::class, 'generate'])->name('report.generate');
 
 // Rute Terproteksi (Hanya bisa diakses oleh Pengelola TPST yang sudah Login)
 Route::middleware('auth')->group(function () {
