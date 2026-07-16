@@ -174,6 +174,20 @@
 </head>
 <body>
 
+    @php
+        /**
+         * Format massa: tampilkan dalam Kg, jika >= 1000 Kg konversi ke Ton.
+         * @param float $kg Nilai dalam kilogram
+         * @return string Contoh: "50,5 Kg" atau "1,250 Ton"
+         */
+        function formatMassKg($kg) {
+            if ($kg >= 1000) {
+                return number_format($kg / 1000, 3, ',', '.') . ' Ton';
+            }
+            return number_format($kg, 1, ',', '.') . ' Kg';
+        }
+    @endphp
+
     {{-- ================================================================ --}}
     {{-- HEADER LAPORAN --}}
     {{-- ================================================================ --}}
@@ -223,15 +237,15 @@
         </tr>
         <tr>
             <td>Total Sampah Organik Diolah</td>
-            <td class="number">{{ number_format($totalWasteInputTon, 3, ',', '.') }} Ton</td>
+            <td class="number">{{ formatMassKg($totalWasteInputKg) }}</td>
         </tr>
         <tr>
             <td>Total Hasil Panen Maggot</td>
-            <td class="number">{{ number_format($totalHarvestKg, 1, ',', '.') }} Kg</td>
+            <td class="number">{{ formatMassKg($totalHarvestKg) }}</td>
         </tr>
         <tr>
             <td>Total Kasgot</td>
-            <td class="number">{{ number_format($totalResidueKg, 1, ',', '.') }} Kg</td>
+            <td class="number">{{ formatMassKg($totalResidueKg) }}</td>
         </tr>
         <tr>
             <td>Jumlah Batch</td>
@@ -257,9 +271,9 @@
     <table class="data-table">
         <tr>
             <th>Bulan</th>
-            <th>Sampah Masuk (Kg)</th>
-            <th>Hasil Panen (Kg)</th>
-            <th>Kasgot (Kg)</th>
+            <th>Sampah Masuk</th>
+            <th>Hasil Panen</th>
+            <th>Kasgot</th>
         </tr>
         @php
             $totalWasteMonthly = 0;
@@ -274,9 +288,9 @@
             @endphp
             <tr>
                 <td class="center">{{ \Carbon\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y') }}</td>
-                <td class="number">{{ number_format($recap['waste_input_kg'], 1, ',', '.') }}</td>
-                <td class="number">{{ number_format($recap['harvest_kg'], 1, ',', '.') }}</td>
-                <td class="number">{{ number_format($recap['residue_kg'], 1, ',', '.') }}</td>
+                <td class="number">{{ formatMassKg($recap['waste_input_kg']) }}</td>
+                <td class="number">{{ formatMassKg($recap['harvest_kg']) }}</td>
+                <td class="number">{{ formatMassKg($recap['residue_kg']) }}</td>
             </tr>
         @empty
             <tr>
@@ -285,9 +299,9 @@
         @endforelse
         <tr class="total-row">
             <td class="center">Total</td>
-            <td class="number">{{ number_format($totalWasteMonthly, 1, ',', '.') }}</td>
-            <td class="number">{{ number_format($totalHarvestMonthly, 1, ',', '.') }}</td>
-            <td class="number">{{ number_format($totalResidueMonthly, 1, ',', '.') }}</td>
+            <td class="number">{{ formatMassKg($totalWasteMonthly) }}</td>
+            <td class="number">{{ formatMassKg($totalHarvestMonthly) }}</td>
+            <td class="number">{{ formatMassKg($totalResidueMonthly) }}</td>
         </tr>
     </table>
 
@@ -298,15 +312,15 @@
         </tr>
         <tr>
             <td>Total Waste Input</td>
-            <td class="number">{{ number_format($totalWasteInputTon, 3, ',', '.') }} Ton</td>
+            <td class="number">{{ formatMassKg($totalWasteInputKg) }}</td>
         </tr>
         <tr>
             <td>Total Harvest</td>
-            <td class="number">{{ number_format($totalHarvestKg, 1, ',', '.') }} Kg</td>
+            <td class="number">{{ formatMassKg($totalHarvestKg) }}</td>
         </tr>
         <tr>
             <td>Total Residue</td>
-            <td class="number">{{ number_format($totalResidueKg, 1, ',', '.') }} Kg</td>
+            <td class="number">{{ formatMassKg($totalResidueKg) }}</td>
         </tr>
         <tr>
             <td>Waste Reduction Index (WRI)</td>
@@ -389,8 +403,8 @@
                     @endphp
                     {{ $durasi !== '-' ? $durasi . ' hari' : '-' }}
                 </td>
-                <td class="number">{{ number_format($cycle->total_waste_input / 1000, 1, ',', '.') }} Kg</td>
-                <td class="number">{{ $cycle->harvest_mass ? number_format($cycle->harvest_mass / 1000, 1, ',', '.') . ' Kg' : '-' }}</td>
+                <td class="number">{{ formatMassKg($cycle->total_waste_input / 1000) }}</td>
+                <td class="number">{{ $cycle->harvest_mass ? formatMassKg($cycle->harvest_mass / 1000) : '-' }}</td>
                 <td class="center">{{ ucfirst($cycle->status) }}</td>
             </tr>
         @empty

@@ -88,6 +88,7 @@ class ReportController extends Controller
             'generated_at'       => now()->translatedFormat('j F Y, H:i') . ' WIB',
             'public_url'         => rtrim(config('app.url'), '/'),
             'totalWasteInputTon' => $totalWasteInputTon,
+            'totalWasteInputKg'  => round($totalWasteInputGr / 1000, 1),
             'totalHarvestKg'     => $totalHarvestKg,
             'totalResidueKg'     => $totalResidueKg,
             'totalBatch'         => $totalBatch,

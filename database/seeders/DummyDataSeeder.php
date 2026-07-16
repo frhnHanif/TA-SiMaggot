@@ -22,45 +22,101 @@ class DummyDataSeeder extends Seeder
         $now = Carbon::now();
         $nowTs = $now->getTimestamp();
         
-        $startTime = $now->copy()->subDays(30);
+        $startTime = $now->copy()->subDays(90);
         $startTs = $startTime->getTimestamp();
 
         // ==========================================
-        // 2. BUAT DATA SIKLUS (CYCLES)
+        // 2. BUAT DATA SIKLUS (CYCLES) — 3 Bulan
         // ==========================================
-        
-        // Siklus 1: Selesai (Durasi 21 Hari)
+        // Pola: 21 hari aktif + 3 hari jeda = 24 hari per siklus
+        // Total ~90 hari → 3 siklus selesai + 1 berjalan
+
+        $DAY = 24 * 3600;
+
+        // Siklus 1: Selesai
         $c1StartTs = $startTs;
-        $c1EndTs = $c1StartTs + (21 * 24 * 3600); // Tambah 21 hari dalam detik
-        
+        $c1EndTs   = $c1StartTs + (21 * $DAY);
+        $c1Waste   = 180.5;
+        $c1Harvest = 28.4;
+        $c1Residue = 45.2;
+
         Cycle::create([
-            'batch_id' => '#BCH-' . date('Ym', $c1StartTs) . '-01',
-            'start_date' => Carbon::createFromTimestamp($c1StartTs),
-            'end_date' => Carbon::createFromTimestamp($c1EndTs),
+            'batch_id'         => '#BCH-' . date('Ym', $c1StartTs) . '-01',
+            'start_date'       => Carbon::createFromTimestamp($c1StartTs),
+            'end_date'         => Carbon::createFromTimestamp($c1EndTs),
             'initial_seed_mass' => 50,
-            'total_waste_input' => 180.5,
-            'harvest_mass' => 28.4,
-            'residue_mass' => 45.2,
-            'wri_result' => (((180.5 - 45.2) / 180.5) / 21) * 100,
-            'eci_result' => (28.4 / 180.5) * 100,
-            'status' => 'selesai',
+            'total_waste_input' => $c1Waste,
+            'harvest_mass'      => $c1Harvest,
+            'residue_mass'      => $c1Residue,
+            'wri_result'        => ((($c1Waste - $c1Residue) / $c1Waste) / 21) * 100,
+            'eci_result'        => ($c1Harvest / $c1Waste) * 100,
+            'status'            => 'selesai',
         ]);
 
-        // Siklus 2: Berjalan (Mulai 8 hari yang lalu dari sekarang)
-        $c2StartTs = $nowTs - (8 * 24 * 3600); // Kurangi 8 hari dalam detik
-        
+        // Siklus 2: Selesai
+        $c2StartTs = $c1EndTs + (3 * $DAY);
+        $c2EndTs   = $c2StartTs + (21 * $DAY);
+        $c2Waste   = 195.2;
+        $c2Harvest = 31.0;
+        $c2Residue = 49.8;
+
         Cycle::create([
-            'batch_id' => '#BCH-' . date('Ym', $c2StartTs) . '-02',
-            'start_date' => Carbon::createFromTimestamp($c2StartTs),
-            'end_date' => null,
+            'batch_id'         => '#BCH-' . date('Ym', $c2StartTs) . '-02',
+            'start_date'       => Carbon::createFromTimestamp($c2StartTs),
+            'end_date'         => Carbon::createFromTimestamp($c2EndTs),
             'initial_seed_mass' => 50,
-            'total_waste_input' => 65.2,
-            'harvest_mass' => null,
-            'residue_mass' => null,
-            'wri_result' => null,
-            'eci_result' => null,
-            'status' => 'berjalan',
+            'total_waste_input' => $c2Waste,
+            'harvest_mass'      => $c2Harvest,
+            'residue_mass'      => $c2Residue,
+            'wri_result'        => ((($c2Waste - $c2Residue) / $c2Waste) / 21) * 100,
+            'eci_result'        => ($c2Harvest / $c2Waste) * 100,
+            'status'            => 'selesai',
         ]);
+
+        // Siklus 3: Selesai
+        $c3StartTs = $c2EndTs + (3 * $DAY);
+        $c3EndTs   = $c3StartTs + (21 * $DAY);
+        $c3Waste   = 210.8;
+        $c3Harvest = 33.5;
+        $c3Residue = 52.1;
+
+        Cycle::create([
+            'batch_id'         => '#BCH-' . date('Ym', $c3StartTs) . '-03',
+            'start_date'       => Carbon::createFromTimestamp($c3StartTs),
+            'end_date'         => Carbon::createFromTimestamp($c3EndTs),
+            'initial_seed_mass' => 50,
+            'total_waste_input' => $c3Waste,
+            'harvest_mass'      => $c3Harvest,
+            'residue_mass'      => $c3Residue,
+            'wri_result'        => ((($c3Waste - $c3Residue) / $c3Waste) / 21) * 100,
+            'eci_result'        => ($c3Harvest / $c3Waste) * 100,
+            'status'            => 'selesai',
+        ]);
+
+        // Siklus 4: Berjalan (mulai 8 hari lalu)
+        $c4StartTs = $nowTs - (8 * $DAY);
+        $c4Waste   = 72.5;
+
+        Cycle::create([
+            'batch_id'         => '#BCH-' . date('Ym', $c4StartTs) . '-04',
+            'start_date'       => Carbon::createFromTimestamp($c4StartTs),
+            'end_date'         => null,
+            'initial_seed_mass' => 50,
+            'total_waste_input' => $c4Waste,
+            'harvest_mass'      => null,
+            'residue_mass'      => null,
+            'wri_result'        => null,
+            'eci_result'        => null,
+            'status'            => 'berjalan',
+        ]);
+
+        // Metadata siklus untuk simulasi sensor (urutan waktu)
+        $cycleMeta = [
+            ['start' => $c1StartTs, 'end' => $c1EndTs, 'harvestGr' => $c1Harvest * 1000, 'residueGr' => $c1Residue * 1000],
+            ['start' => $c2StartTs, 'end' => $c2EndTs, 'harvestGr' => $c2Harvest * 1000, 'residueGr' => $c2Residue * 1000],
+            ['start' => $c3StartTs, 'end' => $c3EndTs, 'harvestGr' => $c3Harvest * 1000, 'residueGr' => $c3Residue * 1000],
+            ['start' => $c4StartTs, 'end' => null,        'harvestGr' => null,            'residueGr' => null],
+        ];
 
         // ==========================================
         // 3. GENERATE DATA SENSOR (Tiap 10 Menit)
@@ -72,27 +128,20 @@ class DummyDataSeeder extends Seeder
             $harvest = 0;
             $baseMass = 0;
 
-            // Logika Pertumbuhan Siklus 1
-            if ($currentTs >= $c1StartTs && $currentTs <= $c1EndTs) {
-                // Kalkulasi progres dari 0.0 hingga 1.0
-                $progress = ($currentTs - $c1StartTs) / (21 * 24 * 3600);
-                $baseMass = 8.33 + ($progress * 12258); // Massa tumbuh dari 8.3g ke ~12.2kg
+            // Cari siklus aktif pada timestamp ini
+            foreach ($cycleMeta as $meta) {
+                if ($currentTs >= $meta['start'] && ($meta['end'] === null || $currentTs <= $meta['end'])) {
+                    $cycleDuration = 21 * $DAY;
+                    $progress = ($currentTs - $meta['start']) / $cycleDuration;
+                    $baseMass = 8.33 + ($progress * 12258); // Massa tumbuh dari 8.3g ke ~12.2kg
 
-                // 10 menit terakhir Siklus 1 -> Maggot Migrasi (Panen)
-                if (($c1EndTs - $currentTs) <= 600) {
-                    $harvest = 28.4 * 1000; // Rak panen terisi 28.4 kg (dalam gram)
-                    $baseMass = (45.2 * 1000) / 6; // Rak 1-6 menyusut, hanya tersisa Kasgot
+                    // 10 menit terakhir siklus → Maggot Migrasi (Panen)
+                    if ($meta['end'] !== null && ($meta['end'] - $currentTs) <= 600) {
+                        $harvest = $meta['harvestGr'];
+                        $baseMass = $meta['residueGr'] / 6; // Hanya tersisa Kasgot per rak
+                    }
+                    break;
                 }
-            } 
-            // Masa Kosong (Jeda antar siklus)
-            elseif ($currentTs > $c1EndTs && $currentTs < $c2StartTs) {
-                $baseMass = 0;
-            } 
-            // Logika Pertumbuhan Siklus 2 (Berjalan)
-            elseif ($currentTs >= $c2StartTs) {
-                $progress = ($currentTs - $c2StartTs) / (21 * 24 * 3600);
-                $progress = min(1, $progress); // Pastikan tidak lebih dari 100%
-                $baseMass = 8.33 + ($progress * 12258);
             }
 
             // Fluktuasi noise hanya 2% dari berat aslinya, dibulatkan murni ke integer
